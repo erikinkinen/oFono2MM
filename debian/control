@@ -17,5 +17,6 @@ Depends: ${misc:Depends},
 	 python3-gi,
 	 modemmanager,
 	 geoclue-2.0,
-	 gir1.2-geoclue-2.0
+	 gir1.2-geoclue-2.0,
+         gir1.2-modemmanager-1.0
 Description: A simple python script implementing ModemManager DBus API and using ofono to manage the modem
