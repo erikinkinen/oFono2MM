@@ -214,6 +214,9 @@ class MMModemInterface(ServiceInterface):
             self.mm_modem_messaging_interface.set_props()
             await self.mm_modem_messaging_interface.init_messages()
 
+    def get_mm_modem_simple_interface(self):
+        return self.mm_modem_simple_interface
+
     async def check_ofono_contexts(self):
         global bearer_i
         if not 'org.ofono.ConnectionManager' in self.ofono_interfaces:
