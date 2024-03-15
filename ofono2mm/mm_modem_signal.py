@@ -49,7 +49,7 @@ class MMModemSignalInterface(ServiceInterface):
             })
         }
 
-    async def set_props(self):
+    def set_props(self):
         if 'org.ofono.NetworkMonitor' in self.ofono_interface_props:
             self.props['Cdma'].value['rssi'] = Variant('d', self.ofono_interface_props['org.ofono.NetworkMonitor']['ReceivedSignalStrength'].value if "ReceivedSignalStrength" in self.ofono_interface_props['org.ofono.NetworkMonitor'] else 0)
             self.props['Evdo'].value['rssi'] = Variant('d', self.ofono_interface_props['org.ofono.NetworkMonitor']['ReceivedSignalStrength'].value if "ReceivedSignalStrength" in self.ofono_interface_props['org.ofono.NetworkMonitor'] else 0)
