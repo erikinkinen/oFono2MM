@@ -512,21 +512,30 @@ class MMModemInterface(ServiceInterface):
         caps = 0
         modes = 0
         pref = 0
+        supported_bands = []
+        gsm_bands = [1, 2, 3, 4, 14, 15, 16, 17, 18, 19, 20]
+        umts_bands = [5, 6, 7, 8, 9, 10, 11, 12, 13, 210, 211, 212, 213, 214, 219, 220, 221, 222, 225, 226, 232]
+        lte_bands = [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 115]
+        nr_bands = [301, 302, 303, 305, 307, 308, 312, 313, 314, 318, 320, 325, 326, 328, 329, 330, 334, 338, 339, 340, 341, 348, 350, 351, 353, 365, 366, 370, 371, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 386, 389, 390, 391, 392, 393, 394, 395, 557, 558, 560, 561]
         if 'org.ofono.RadioSettings' in self.ofono_interface_props:
             if 'AvailableTechnologies' in self.ofono_interface_props['org.ofono.RadioSettings']:
                 ofono_techs = self.ofono_interface_props['org.ofono.RadioSettings']['AvailableTechnologies'].value
                 if 'gsm' in ofono_techs:
                     caps |= 4
                     modes |= 2
+                    supported_bands.extend(gsm_bands)
                 if 'umts' in ofono_techs:
                     caps |= 4
                     modes |= 4
+                    supported_bands.extend(umts_bands)
                 if 'lte' in ofono_techs:
                     caps |= 8
                     modes |= 8
+                    supported_bands.extend(lte_bands)
                 if 'nr' in ofono_techs:
                     caps |= 16
                     modes |= 16
+                    supported_bands.extend(nr_bands)
 
             if 'TechnologyPreference' in self.ofono_interface_props['org.ofono.RadioSettings']:
                 ofono_pref =  self.ofono_interface_props['org.ofono.RadioSettings']['TechnologyPreference'].value
@@ -541,6 +550,9 @@ class MMModemInterface(ServiceInterface):
 
         self.props['CurrentCapabilities'] = Variant('u', caps)
         self.props['SupportedCapabilities'] = Variant('au', [caps])
+
+        self.props['CurrentBands'] = Variant('au', supported_bands)
+        self.props['SupportedBands'] = Variant('au', supported_bands)
 
         if caps == 0:
             self.props['CurrentCapabilities'] = Variant('u', 4) # lte MM_MODEM_CAPABILITY_LTE
