@@ -22,9 +22,9 @@ class MMModem3gppInterface(ServiceInterface):
             'OperatorName': Variant('s', ''),
             'EnabledFacilityLocks': Variant('u', 0), # on runtime none MM_MODEM_3GPP_FACILITY_NONE
             'SubscriptionState': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_SUBSCRIPTION_STATE_UNKNOWN
-            'EpsUeModeOperation': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
+            'EpsUeModeOperation': Variant('u', 4), # on runtime CSPS2 MM_MODEM_3GPP_EPS_UE_MODE_OPERATION_CSPS_2
             'Pco': Variant('a(ubay)', []),
-            'InitialEpsBearer': Variant('o', '/'),
+            'InitialEpsBearer': Variant('o', '/org/freedesktop/ModemManager1/Bearer/0'),
             'InitialEpsBearerSettings': Variant('a{sv}', {}),
             'PacketServiceState': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
             'Nr5gRegistrationSettings': Variant('a{sv}', {
@@ -37,22 +37,38 @@ class MMModem3gppInterface(ServiceInterface):
         old_props = self.props.copy()
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['OperatorName'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
-            MCC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileCountryCode'].value if "MobileCountryCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else ''
-            MNC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value if "MobileNetworkCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else ''
-            self.props['OperatorCode'] = Variant('s', f"{MCC}{MNC}" if MCC != '' else '')
+
+            if 'MobileCountryCode' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
+                MCC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileCountryCode'].value
+            else:
+                MCC = ''
+
+            if 'MobileNetworkCode' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
+                MNC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value
+            else:
+                MNC = ''
+
+            self.props['OperatorCode'] = Variant('s', f'{MCC}{MNC}')
+
             if 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unregistered":
                     self.props['RegistrationState'] = Variant('u', 0) # idle MM_MODEM_3GPP_REGISTRATION_STATE_IDLE
+                    self.props['PacketServiceState'] = Variant('u', 1) # detached MM_MODEM_3GPP_PACKET_SERVICE_STATE_DETACHED
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "registered":
                     self.props['RegistrationState'] = Variant('u', 1) # home MM_MODEM_3GPP_REGISTRATION_STATE_HOME
+                    self.props['PacketServiceState'] = Variant('u', 2) # attached MM_MODEM_3GPP_PACKET_SERVICE_STATE_ATTACHED
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "searching":
                     self.props['RegistrationState'] = Variant('u', 2) # searching MM_MODEM_3GPP_REGISTRATION_STATE_SEARCHING
+                    self.props['PacketServiceState'] = Variant('u', 0) # unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "denied":
                     self.props['RegistrationState'] = Variant('u', 3) # denied MM_MODEM_3GPP_REGISTRATION_STATE_DENIED
+                    self.props['PacketServiceState'] = Variant('u', 0) # unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unknown":
                     self.props['RegistrationState'] = Variant('u', 4) # unknown MM_MODEM_3GPP_REGISTRATION_STATE_UNKNOWN
+                    self.props['PacketServiceState'] = Variant('u', 0) # unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "roaming":
                     self.props['RegistrationState'] = Variant('u', 5) # MM_MODEM_3GPP_REGISTRATION_STATE_ROAMING
+                    self.props['PacketServiceState'] = Variant('u', 2) # attached MM_MODEM_3GPP_PACKET_SERVICE_STATE_ATTACHED
             else:
                 self.props['RegistrationState'] = Variant('u', 4) # unknown MM_MODEM_3GPP_REGISTRATION_STATE_UNKNOWN
         else:
