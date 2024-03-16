@@ -564,44 +564,41 @@ class MMModemInterface(ServiceInterface):
             self.props['SupportedCapabilities'] = Variant('au', [4]) # lte MM_MODEM_CAPABILITY_LTE
 
         supported_modes = []
-        if modes == 30:
-            supported_modes.append([30, 16])
-            supported_modes.append([14, 8])
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 28:
-            supported_modes.append([28, 0])
-        if modes == 26:
-            supported_modes.append([26, 0])
-        if modes == 24:
-            supported_modes.append([24, 0])
-        if modes == 22:
-            supported_modes.append([22, 0])
-        if modes == 20:
-            supported_modes.append([20, 0])
-        if modes == 18:
-            supported_modes.append([18, 0])
-        if modes == 16:
-            supported_modes.append([16, 0])
-        if modes == 14:
-            supported_modes.append([14, 8])
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 12:
-            supported_modes.append([12, 8])
-            supported_modes.append([4, 0])
-        if modes == 10:
-            supported_modes.append([10, 8])
-            supported_modes.append([2, 0])
-        if modes == 8:
-            supported_modes.append([8, 0])
-        if modes == 6:
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 4:
-            supported_modes.append([4, 0])
-        if modes == 2:
-            supported_modes.append([2, 0])
+        if modes == 30: # gsm umts lte nr
+            supported_modes.append([30, 16]) # nr
+            supported_modes.append([30, 8]) # lte
+            supported_modes.append([30, 4]) # umts
+            supported_modes.append([30, 2]) # gsm
+            supported_modes.append([14, 8]) # lte
+            supported_modes.append([14, 4]) # umts
+            supported_modes.append([14, 2]) # gsm
+            supported_modes.append([12, 8]) # lte
+            supported_modes.append([12, 4]) # umts
+            supported_modes.append([10, 8]) # lte
+            supported_modes.append([10, 2]) # gsm
+            supported_modes.append([6, 4]) # umts
+            supported_modes.append([6, 2]) # gsm
+            supported_modes.append([8, 0]) # none
+            supported_modes.append([4, 0]) # none
+            supported_modes.append([2, 0]) # none
+        if modes == 14: # gsm umts lte
+            supported_modes.append([14, 8]) # lte
+            supported_modes.append([14, 4]) # umts
+            supported_modes.append([14, 2]) # gsm
+            supported_modes.append([12, 8]) # lte
+            supported_modes.append([12, 4]) # umts
+            supported_modes.append([10, 8]) # lte
+            supported_modes.append([10, 2]) # gsm
+            supported_modes.append([6, 4]) # umts
+            supported_modes.append([6, 2]) # gsm
+            supported_modes.append([8, 0]) # none
+            supported_modes.append([4, 0]) # none
+            supported_modes.append([2, 0]) # none
+        if modes == 6: # gsm umts
+            supported_modes.append([6, 4]) # umts
+            supported_modes.append([2, 0]) # none
+        if modes == 2: # gsm
+            supported_modes.append([2, 0]) # none
 
         self.props['SupportedModes'] = Variant('a(uu)', supported_modes)
         for mode in supported_modes:
@@ -794,6 +791,8 @@ class MMModemInterface(ServiceInterface):
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'lte'))
                 elif modes[0] | 16:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
+        else:
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'The given combination of allowed and preferred modes is not supported')
 
         self.set_props()
 
