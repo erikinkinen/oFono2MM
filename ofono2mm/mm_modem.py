@@ -78,7 +78,7 @@ class MMModemInterface(ServiceInterface):
             'CurrentModes': Variant('(uu)', [0, 0]), # on runtime allowed mode none, preferred mode none MM_MODEM_MODE_NONE
             'SupportedBands': Variant('au', []),
             'CurrentBands': Variant('au', []),
-            'SupportedIpFamilies': Variant('u', 3) # hardcoded value ipv4 and ipv6 MM_BEARER_IP_FAMILY_IPV4V6
+            'SupportedIpFamilies': Variant('u', 7) # hardcoded value ipv4, ipv6 and ipv4v6 MM_BEARER_IP_FAMILY_IPV4 | MM_BEARER_IP_FAMILY_IPV6 | MM_BEARER_IP_FAMILY_IPV4V6
         }
 
     async def init_ofono_interfaces(self):
