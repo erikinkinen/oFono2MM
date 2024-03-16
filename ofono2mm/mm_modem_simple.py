@@ -161,6 +161,8 @@ class MMModemSimpleInterface(ServiceInterface):
                 type = ctx[1].get('Type', Variant('s', '')).value
                 if type.lower() == "internet":
                     apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+                    username = ctx[1].get('Username', Variant('s', '')).value
+                    password = ctx[1].get('Password', Variant('s', '')).value
         except Exception as e:
             return False
 
@@ -185,6 +187,10 @@ class MMModemSimpleInterface(ServiceInterface):
                 'method': 'auto'
             }
         }
+
+        if username and password:
+            connection_settings['gsm']['username'] = f'{username}'
+            connection_settings['gsm']['password'] = f'{password}'
 
         try:
             if self.network_manager_connection_exists(f'{carrier_name}') == False:
