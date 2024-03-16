@@ -1,28 +1,28 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 
 class MMModemCDMAInterface(ServiceInterface):
     def __init__(self, mm_modem):
         super().__init__('org.freedesktop.ModemManager1.Modem.ModemCdma')
         self.mm_modem = mm_modem
         self.props = {
-            'ActivationState': Variant('u', 0), # hardcoded value unknown MM_MODEM_CDMA_ACTIVATION_STATE_UNKNOWN
+            'ActivationState': Variant('u', 0), # hardcoded dummy value unknown MM_MODEM_CDMA_ACTIVATION_STATE_UNKNOWN
             'Meid': Variant('s', ''),
             'Esn': Variant('s', ''),
             'Sid': Variant('u', 0),
             'Nid': Variant('u', 0),
-            'Cdma1xRegistrationState': Variant('u', 0), # hardcoded value MM_MODEM_CDMA_REGISTRATION_STATE_UNKNOWN
-            'EvdoRegistrationState': Variant('u', 0) # hardcoded value MM_MODEM_CDMA_REGISTRATION_STATE_UNKNOWN
+            'Cdma1xRegistrationState': Variant('u', 0), # hardcoded dummy value MM_MODEM_CDMA_REGISTRATION_STATE_UNKNOWN
+            'EvdoRegistrationState': Variant('u', 0) # hardcoded dummy value MM_MODEM_CDMA_REGISTRATION_STATE_UNKNOWN
         }
 
     @method()
     def Activate(self, carrier_code: 's'):
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot perform OTA activation: operation not supported')
 
     @method()
     def ActivateManuel(self, properties: 'a{sv}') -> 'o':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot perform manual activation: operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def ActivationState(self) -> 'u':
