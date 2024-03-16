@@ -140,6 +140,20 @@ class MMInterface(ServiceInterface):
         self.mm_modem_objects.append(f'/org/freedesktop/ModemManager1/Modem/{self.i}')
         self.i += 1
 
+        mm_modem_simple = mm_modem_interface.get_mm_modem_simple_interface()
+        try:
+            self.loop.create_task(self.simple_set_apn(mm_modem_simple))
+        except Exception as e:
+            pass
+
+    async def simple_set_apn(self, mm_modem_simple):
+        while True:
+            ret = await mm_modem_simple.network_manager_set_apn()
+            if ret == True:
+               return
+
+            await asyncio.sleep(2)
+
     def ofono_modem_removed(self, path):
         for mm_object in self.mm_modem_objects:
             try:
@@ -147,6 +161,7 @@ class MMInterface(ServiceInterface):
                     self.bus.unexport(mm_object)
             except Exception as e:
                 pass
+
     @method()
     def SetLogging(self, level: 's'):
         pass
