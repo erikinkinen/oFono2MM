@@ -1,6 +1,6 @@
 from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 
 class MMModemSarInterface(ServiceInterface):
     def __init__(self, mm_modem):
@@ -21,8 +21,8 @@ class MMModemSarInterface(ServiceInterface):
 
     @method()
     def Enable(self, enable: 'b'):
-        self.props['State'] = Variant('b', enable)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup SAR: operation not supported')
 
     @method()
     def SetPowerLevel(self, level: 'u'):
-        self.props['PowerLevel'] = Variant('u', level)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set SAR power level: SAR is disabled')
