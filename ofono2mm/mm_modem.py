@@ -783,13 +783,13 @@ class MMModemInterface(ServiceInterface):
             if modes[1] == 4:
                 await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'umts'))
             if modes[1] == 0:
-                if modes[0] | 2:
+                if modes[0] == 2:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'gsm'))
-                elif modes[0] | 4:
+                elif modes[0] == 4:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'umts'))
-                elif modes[0] | 8:
+                elif modes[0] == 8:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'lte'))
-                elif modes[0] | 16:
+                elif modes[0] == 16:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
         else:
             raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'The given combination of allowed and preferred modes is not supported')
