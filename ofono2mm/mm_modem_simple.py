@@ -2,6 +2,11 @@ from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+import NetworkManager
+import uuid
+import time
+import dbus.mainloop.glib
+
 class MMModemSimpleInterface(ServiceInterface):
     def __init__(self, mm_modem, ofono_interfaces, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Simple')
@@ -96,6 +101,7 @@ class MMModemSimpleInterface(ServiceInterface):
         except Exception as e:
             pass
 
+        await self.network_manager_set_apn()
         for b in self.mm_modem.bearers:
             if self.mm_modem.bearers[b].props['Properties'].value['apn'] == properties['apn']:
                 await self.mm_modem.bearers[b].add_auth_ofono(properties['username'].value if 'username' in properties else '',
@@ -130,3 +136,61 @@ class MMModemSimpleInterface(ServiceInterface):
     async def GetStatus(self) -> 'a{sv}':
         await self.set_props()
         return self.props
+
+    async def network_manager_set_apn(self):
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+        current_timestamp = int(time.time())
+
+        sim_id = self.ofono_interface_props['org.ofono.SimManager']['CardIdentifier'].value
+        carrier_name = self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value
+
+        contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
+        for ctx in contexts:
+            type = ctx[1].get('Type', Variant('s', '')).value
+            if type.lower() == "internet":
+                apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+
+        connection_settings = {
+            'connection': {
+                'id': f'{carrier_name}',
+                'uuid': str(uuid.uuid4()),
+                'type': 'gsm',
+                'timestamp': current_timestamp
+            },
+            'gsm': {
+                'apn': f'{apn}',
+                'home-only': True,
+                'sim-id': f'{sim_id}'
+            },
+            'ipv4': {
+                'dns-priority': 120,
+                'method': 'auto',
+                'route-metric': 1050
+            },
+            'ipv6': {
+                'method': 'auto'
+            }
+        }
+
+        if self.network_manager_connection_exists(f'{carrier_name}') == False:
+            conn = NetworkManager.Settings.AddConnection(connection_settings)
+            print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.")
+
+    def network_manager_connection_exists(self, connection_id):
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+        # for some reason NetworkManager.NetworkManager.Reload doesn't work correctly
+        bus = dbus.SystemBus()
+        nm = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
+
+        nm_settings = dbus.Interface(nm, "org.freedesktop.NetworkManager.Settings")
+        nm_settings.ReloadConnections()
+
+        connections = NetworkManager.Settings.ListConnections()
+        found = any(conn.GetSettings()['connection']['id'] == connection_id for conn in connections)
+
+        if found:
+            return True
+        else:
+            return False
