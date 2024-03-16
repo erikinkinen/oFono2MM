@@ -1,6 +1,6 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 from datetime import datetime
 import gi
 gi.require_version('Geoclue', '2.0')
@@ -22,9 +22,9 @@ class MMModemLocationInterface(ServiceInterface):
         }
 
         self.props = {
-            'Capabilities': Variant('u', 0), # on runtime MM_MODEM_LOCATION_SOURCE_NONE
-            'SupportedAssistanceData': Variant('u', 0), # hardcoded value MM_MODEM_LOCATION_ASSISTANCE_DATA_TYPE_NONE
-            'Enabled': Variant('u', 2), # on runtime raw MM_MODEM_LOCATION_SOURCE_GPS_RAW
+            'Capabilities': Variant('u', 0), # hardcoded dummy value none MM_MODEM_LOCATION_SOURCE_NONE
+            'SupportedAssistanceData': Variant('u', 0), # hardcoded dummy value none MM_MODEM_LOCATION_ASSISTANCE_DATA_TYPE_NONE
+            'Enabled': Variant('u', 2), # hardcoded dummy value raw MM_MODEM_LOCATION_SOURCE_GPS_RAW
             'SignalsLocation': Variant('b', False),
             'SuplServer': Variant('s', ''),
             'AssistanceDataServers': Variant('as', []),
@@ -60,11 +60,11 @@ class MMModemLocationInterface(ServiceInterface):
 
     @method()
     def SetSuplServer(self, supl: 's') -> None:
-        self.props['SuplServer'] = Variant('s', supl)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set SUPL server: A-GPS not supported')
 
     @method()
     def InjectAssistanceData(self, data: 'ay') -> None:
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot inject assistance data: ununsupported')
 
     @method()
     def SetGpsRefreshRate(self, rate: 'u') -> None:
