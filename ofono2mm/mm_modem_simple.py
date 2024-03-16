@@ -105,7 +105,6 @@ class MMModemSimpleInterface(ServiceInterface):
             await self.network_manager_set_apn()
         except Exception as e:
             pass
-
         for b in self.mm_modem.bearers:
             if self.mm_modem.bearers[b].props['Properties'].value['apn'] == properties['apn']:
                 await self.mm_modem.bearers[b].add_auth_ofono(properties['username'].value if 'username' in properties else '',
@@ -146,14 +145,24 @@ class MMModemSimpleInterface(ServiceInterface):
 
         current_timestamp = int(time.time())
 
-        sim_id = self.ofono_interface_props['org.ofono.SimManager']['CardIdentifier'].value
-        carrier_name = self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value
+        try:
+            sim_id = self.ofono_interface_props['org.ofono.SimManager']['CardIdentifier'].value
+        except Exception as e:
+            return False
 
-        contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
-        for ctx in contexts:
-            type = ctx[1].get('Type', Variant('s', '')).value
-            if type.lower() == "internet":
-                apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+        try:
+            carrier_name = self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value
+        except Exception as e:
+            return False
+
+        try:
+            contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
+            for ctx in contexts:
+                type = ctx[1].get('Type', Variant('s', '')).value
+                if type.lower() == "internet":
+                    apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+        except Exception as e:
+            return False
 
         connection_settings = {
             'connection': {
@@ -177,9 +186,13 @@ class MMModemSimpleInterface(ServiceInterface):
             }
         }
 
-        if self.network_manager_connection_exists(f'{carrier_name}') == False:
-            conn = NetworkManager.Settings.AddConnection(connection_settings)
-            print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.")
+        try:
+            if self.network_manager_connection_exists(f'{carrier_name}') == False:
+                conn = NetworkManager.Settings.AddConnection(connection_settings)
+                #print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.")
+            return True
+        except Exception as e:
+            return False
 
     def network_manager_connection_exists(self, connection_id):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
