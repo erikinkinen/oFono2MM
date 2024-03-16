@@ -105,6 +105,7 @@ class MMModemSimpleInterface(ServiceInterface):
             await self.network_manager_set_apn()
         except Exception as e:
             pass
+
         for b in self.mm_modem.bearers:
             if self.mm_modem.bearers[b].props['Properties'].value['apn'] == properties['apn']:
                 await self.mm_modem.bearers[b].add_auth_ofono(properties['username'].value if 'username' in properties else '',
@@ -158,6 +159,7 @@ class MMModemSimpleInterface(ServiceInterface):
         try:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             for ctx in contexts:
+                #print(ctx)
                 type = ctx[1].get('Type', Variant('s', '')).value
                 if type.lower() == "internet":
                     apn = ctx[1].get('AccessPointName', Variant('s', '')).value
@@ -193,14 +195,16 @@ class MMModemSimpleInterface(ServiceInterface):
             connection_settings['gsm']['password'] = f'{password}'
 
         try:
-            if self.network_manager_connection_exists(f'{carrier_name}') == False:
+            if self.network_manager_connection_exists(f'{apn}') == False:
                 conn = NetworkManager.Settings.AddConnection(connection_settings)
                 #print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.")
             return True
         except Exception as e:
             return False
 
-    def network_manager_connection_exists(self, connection_id):
+    def network_manager_connection_exists(self, target_apn):
+        found = False
+
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
         # for some reason NetworkManager.NetworkManager.Reload doesn't work correctly
@@ -211,8 +215,15 @@ class MMModemSimpleInterface(ServiceInterface):
         nm_settings.ReloadConnections()
 
         connections = NetworkManager.Settings.ListConnections()
-        found = any(conn.GetSettings()['connection']['id'] == connection_id for conn in connections)
 
+        for conn in connections:
+            conn_settings = conn.GetSettings()
+            if 'gsm' in conn_settings:
+                apn = conn_settings['gsm']['apn']
+                if apn == target_apn:
+                    found = True
+
+        #print(found)
         if found:
             return True
         else:
