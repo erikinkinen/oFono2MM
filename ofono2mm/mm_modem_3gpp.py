@@ -25,7 +25,13 @@ class MMModem3gppInterface(ServiceInterface):
             'EpsUeModeOperation': Variant('u', 4), # on runtime CSPS2 MM_MODEM_3GPP_EPS_UE_MODE_OPERATION_CSPS_2
             'Pco': Variant('a(ubay)', []),
             'InitialEpsBearer': Variant('o', '/org/freedesktop/ModemManager1/Bearer/0'),
-            'InitialEpsBearerSettings': Variant('a{sv}', {}),
+            'InitialEpsBearerSettings': Variant('a{sv}', {
+                'profile-id': Variant('u', 1),
+                'profile-name': Variant('s', ''),
+                'apn': Variant('s', ''),
+                'allowed-auth': Variant('u', 1),
+                'ip-type': Variant('u', 4)
+            }),
             'PacketServiceState': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_PACKET_SERVICE_STATE_UNKNOWN
             'Nr5gRegistrationSettings': Variant('a{sv}', {
                 'mico-mode': Variant('u', 0), # hardcoded value unknown MM_MODEM_3GPP_MICO_MODE_UNKNOWN
