@@ -6,8 +6,8 @@ POLKIT_DIR = /etc/polkit-1/localauthority/10-vendor.d
 
 MAIN = main.py
 OFONO2MM_DIR = ofono2mm
-DBUS_XML = dbus.xml
-OFONO_XML_FILES = ofono.xml ofono_modem.xml ofono_operator.xml ofono_context.xml
+DBUS_XML = dbus/dbus.xml
+OFONO_XML_FILES = dbus/ofono.xml dbus/ofono_modem.xml dbus/ofono_operator.xml dbus/ofono_context.xml
 SYSTEMD_CONF = systemd/10-ofono2mm.conf
 POLKIT_PKLA = extra/ofono2mm-radio.pkla
 

@@ -1,9 +1,9 @@
 main.py /usr/lib/ofono2mm
 ofono2mm /usr/lib/ofono2mm
-dbus.xml /usr/lib/ofono2mm
-ofono.xml /usr/lib/ofono2mm
-ofono_modem.xml /usr/lib/ofono2mm
-ofono_operator.xml /usr/lib/ofono2mm
-ofono_context.xml /usr/lib/ofono2mm
+dbus/dbus.xml /usr/lib/ofono2mm
+dbus/ofono.xml /usr/lib/ofono2mm
+dbus/ofono_modem.xml /usr/lib/ofono2mm
+dbus/ofono_operator.xml /usr/lib/ofono2mm
+dbus/ofono_context.xml /usr/lib/ofono2mm
 systemd/10-ofono2mm.conf /lib/systemd/system/ModemManager.service.d/
 extra/ofono2mm-radio.pkla /etc/polkit-1/localauthority/10-vendor.d/
