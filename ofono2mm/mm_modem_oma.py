@@ -1,6 +1,6 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 
 class MMModemOmaInterface(ServiceInterface):
     def __init__(self, mm_modem):
@@ -9,25 +9,25 @@ class MMModemOmaInterface(ServiceInterface):
         self.props = {
             'Features': Variant('u', 0),
             'PendingNetworkInitiatedSessions': Variant('a(uu)', []),
-            'SessionType': Variant('u', 0), # on runtime unknown MM_OMA_SESSION_TYPE_UNKNOWN
-            'SessionState': Variant('i', 0) # hardcoded value unknown MM_OMA_SESSION_STATE_UNKNOWN
+            'SessionType': Variant('u', 0), # hardcoded dummy value unknown MM_OMA_SESSION_TYPE_UNKNOWN
+            'SessionState': Variant('i', 0) # hardcoded dummy value unknown MM_OMA_SESSION_STATE_UNKNOWN
         }
 
     @method()
     def Setup(self, features: 'u'):
-        self.props['Features'] = Variant('u', features)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup OMA: operation not supported')
 
     @method()
     def StartClientInitiatedSession(self, session_type: 'u'):
-        self.props['SessionType'] = Variant('u', session_type)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot start client-initiated OMA session: operation not supported')
 
     @method()
     def AcceptNetworkInitiatedSession(self, session_id: 'u', accept: 'b'):
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot accept network-initiated OMA session: operation not supported')
 
     @method()
     def CancelSession(self):
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot cancel OMA session: operation not supported')
 
     @signal()
     def SessionStateChanged(self, old_session_state: 'i', new_session_state: 'i', session_state_failed_reason: 'u'):
