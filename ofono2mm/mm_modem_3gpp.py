@@ -145,27 +145,27 @@ class MMModem3gppInterface(ServiceInterface):
 
     @method()
     async def SetEpsUeModeOperation(self) -> 'u':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set UE mode of operation for EPS: operation not supported')
 
     @method()
     async def SetInitialEpsBearerSettings(self) -> 'a{sv}':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
 
     @method()
     async def SetNr5gRegistrationSettings(self) -> 'a{sv}':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
 
     @method()
     async def DisableFacilityLock(self) -> '(us)':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
 
     @method()
     async def SetCarrierLock(self) -> 'ay':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot send set carrier lock request to modem: operation not supported')
 
     @method()
     async def SetPacketServiceState(self) -> 'u':
-        pass
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Explicit packet service attach/detach operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def Imei(self) -> 's':
