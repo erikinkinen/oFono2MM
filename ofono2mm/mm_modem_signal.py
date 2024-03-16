@@ -1,6 +1,6 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 
 class MMModemSignalInterface(ServiceInterface):
     def __init__(self, mm_modem, ofono_interfaces, ofono_interface_props):
@@ -95,17 +95,12 @@ class MMModemSignalInterface(ServiceInterface):
 
     @method()
     async def Setup(self, rate: 'u'):
-        try:
-            await self.set_props()
-        except Exception as e:
-            pass
-
+        self.set_props()
         self.props['Rate'] = Variant('u', rate)
 
     @method()
     def SetupThresholds(self, settings: 'a{sv}'):
-        self.props['RssiThreshold'] = Variant('u', settings.get('rssi-threshold', Variant('u', 0)).value)
-        self.props['ErrorRateThreshold'] = Variant('b', settings.get('error-rate-threshold', Variant('b', False)).value)
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup thresholds: operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def Rate(self) -> 'u':
