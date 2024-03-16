@@ -5,13 +5,12 @@ from dbus_next.service import (ServiceInterface,
                                method, dbus_property)
 from dbus_next.constants import PropertyAccess
 from dbus_next import DBusError, BusType
-
 import asyncio
-
 from ofono2mm import MMModemInterface, Ofono, DBus
 from ofono2mm.utils import async_locked
 
 has_bus = False
+sim_i = 0
 
 class MMInterface(ServiceInterface):
     def __init__(self, loop, bus):
@@ -22,6 +21,7 @@ class MMInterface(ServiceInterface):
         self.dbus_client = DBus(bus)
         self.mm_modem_interfaces = []
         self.mm_modem_objects = []
+        self.offline_modems = []
         self.loop.create_task(self.check_ofono_presence())
 
     @dbus_property(access=PropertyAccess.READ)
@@ -32,7 +32,7 @@ class MMInterface(ServiceInterface):
     async def ScanDevices(self):
         try:
             await self.find_ofono_modems()
-        except:
+        except Exception as e:
             pass
 
     async def check_ofono_presence(self):
@@ -55,13 +55,14 @@ class MMInterface(ServiceInterface):
 
     @async_locked
     async def find_ofono_modems(self):
-        global has_bus
+        global has_bus, sim_i
 
         for mm_object in self.mm_modem_objects:
             self.bus.unexport(mm_object)
 
         self.mm_modem_objects = []
-        self.mm_modem_intefaces = []
+        self.mm_modem_interfaces = []
+        self.offline_modems = []
 
         if not self.ofono_manager_interface:
             return
@@ -78,9 +79,22 @@ class MMInterface(ServiceInterface):
                 pass
 
         self.i = 0
+        sim_i = len(self.ofono_modem_list)
 
         for modem in self.ofono_modem_list:
-            await self.export_new_modem(modem[0], modem[1])
+            self.ofono_sim_manager = self.ofono_client["ofono_modem"][modem[0]]['org.ofono.SimManager']
+            sim_manager_props = await self.ofono_sim_manager.call_get_properties()
+            sim_present = sim_manager_props['Present'].value
+
+            #print(f"modem is {modem[0]}, online: {modem[1]['Online'].value}, number of sims: {sim_i} sim is present: {sim_present}")
+
+            if sim_present == False and sim_i > 1:
+                self.offline_modems.append(modem)
+            else:
+                await self.export_new_modem(modem[0], modem[1])
+
+        for modem_info in self.offline_modems:
+            await self.export_new_modem(*modem_info)
 
         if not has_bus and len(self.mm_modem_objects) != 0:
             await self.bus.request_name('org.freedesktop.ModemManager1')
@@ -95,7 +109,7 @@ class MMInterface(ServiceInterface):
 
     def ofono_modem_added(self, path, mprops):
         try:
-            self.loop.create_task(self.export_new_modem(path, props))
+            self.loop.create_task(self.export_new_modem(path, mprops))
         except Exception as e:
             pass
 
@@ -104,6 +118,8 @@ class MMInterface(ServiceInterface):
         mm_modem_interface.ofono_props = mprops
         self.ofono_client["ofono_modem"][path]['org.ofono.Modem'].on_property_changed(mm_modem_interface.ofono_changed)
         await mm_modem_interface.init_ofono_interfaces()
+
+        #print(f"Processing modem: {path}")
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.i}', mm_modem_interface)
         mm_modem_interface.set_props()
         await mm_modem_interface.init_mm_sim_interface()
@@ -131,7 +147,6 @@ class MMInterface(ServiceInterface):
                     self.bus.unexport(mm_object)
             except Exception as e:
                 pass
-
     @method()
     def SetLogging(self, level: 's'):
         pass
