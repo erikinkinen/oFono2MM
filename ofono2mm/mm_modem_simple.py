@@ -101,7 +101,11 @@ class MMModemSimpleInterface(ServiceInterface):
         except Exception as e:
             pass
 
-        await self.network_manager_set_apn()
+        try:
+            await self.network_manager_set_apn()
+        except Exception as e:
+            pass
+
         for b in self.mm_modem.bearers:
             if self.mm_modem.bearers[b].props['Properties'].value['apn'] == properties['apn']:
                 await self.mm_modem.bearers[b].add_auth_ofono(properties['username'].value if 'username' in properties else '',
