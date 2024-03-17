@@ -28,7 +28,8 @@ class MMModemSimpleInterface(ServiceInterface):
         }
 
     def set_props(self):
-        old_props = self.props.copy()
+        old_props = self.props
+
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['m3gpp-operator-name'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
 
@@ -93,6 +94,10 @@ class MMModemSimpleInterface(ServiceInterface):
                 self.props['access-technologies'] = Variant('u', 0) # network is unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
         else:
             self.props['access-technologies'] = Variant('u', 0) # network is unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
+
+        for prop in self.props:
+            if self.props[prop].value != old_props[prop].value:
+                self.emit_properties_changed({prop: self.props[prop].value})
 
     @method()
     async def Connect(self, properties: 'a{sv}') -> 'o':
