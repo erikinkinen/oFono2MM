@@ -3,9 +3,8 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 class MMModemOmaInterface(ServiceInterface):
-    def __init__(self, mm_modem):
+    def __init__(self):
         super().__init__('org.freedesktop.ModemManager1.Modem.Oma')
-        self.mm_modem = mm_modem
         self.props = {
             'Features': Variant('u', 0),
             'PendingNetworkInitiatedSessions': Variant('a(uu)', []),

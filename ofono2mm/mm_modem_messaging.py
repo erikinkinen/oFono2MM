@@ -8,14 +8,9 @@ from ofono2mm.mm_sms import MMSmsInterface
 message_i = 1
 
 class MMModemMessagingInterface(ServiceInterface):
-    def __init__(self, index, bus, ofono_client, modem_name, ofono_modem, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, bus, ofono_props, ofono_interfaces, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Messaging')
-        self.index = index
         self.bus = bus
-        self.ofono_client = ofono_client
-        self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
-        self.modem_name = modem_name
-        self.ofono_modem = ofono_modem
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
@@ -38,7 +33,7 @@ class MMModemMessagingInterface(ServiceInterface):
 
     def add_incoming_message(self, msg, props):
         global message_i
-        mm_sms_interface = MMSmsInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
+        mm_sms_interface = MMSmsInterface()
         mm_sms_interface.props.update({
             'State': Variant('u', 3), # hardcoded value received MM_SMS_STATE_RECEIVED
             'PduType': Variant('u', 1), # hardcoded value deliver MM_SMS_PDU_TYPE_DELIVER
@@ -71,7 +66,7 @@ class MMModemMessagingInterface(ServiceInterface):
         if 'number' not in properties or 'text' not in properties:
             return
 
-        mm_sms_interface = MMSmsInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
+        mm_sms_interface = MMSmsInterface()
         mm_sms_interface.props.update({
             'Text': properties['text'],
             'Number': properties['number'],

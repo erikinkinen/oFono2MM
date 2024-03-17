@@ -8,15 +8,12 @@ from ofono2mm.utils import async_retryable
 import asyncio
 
 class MMBearerInterface(ServiceInterface):
-    def __init__(self, index, bus, ofono_client, modem_name, ofono_modem, ofono_props, ofono_interfaces, ofono_interface_props, mm_modem):
+    def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, mm_modem):
         super().__init__('org.freedesktop.ModemManager1.Bearer')
         # print(f"Creating new bearer interface for {index}")
-        self.index = index
-        self.bus = bus
         self.ofono_client = ofono_client
         self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
         self.modem_name = modem_name
-        self.ofono_modem = ofono_modem
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props

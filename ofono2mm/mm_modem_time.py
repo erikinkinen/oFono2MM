@@ -4,17 +4,11 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
 class MMModemTimeInterface(ServiceInterface):
-    def __init__(self, index, bus, ofono_client, modem_name, ofono_modem, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, ofono_client, modem_name, ofono_interfaces):
         super().__init__('org.freedesktop.ModemManager1.Modem.Time')
-        self.index = index
-        self.bus = bus
         self.ofono_client = ofono_client
-        self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
         self.modem_name = modem_name
-        self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
-        self.ofono_interface_props = ofono_interface_props
-        self.ofono_modem = self.ofono_proxy['org.ofono.Modem']
         self.network_time = datetime.now().isoformat()
         self.network_timezone = {
             'offset': Variant('i', 0),

@@ -7,9 +7,8 @@ gi.require_version('Geoclue', '2.0')
 from gi.repository import Geoclue
 
 class MMModemLocationInterface(ServiceInterface):
-    def __init__(self, modem):
+    def __init__(self):
         super().__init__('org.freedesktop.ModemManager1.Modem.Location')
-        self.modem = modem
         utc_time = datetime.utcnow().isoformat()
 
         self.location = {

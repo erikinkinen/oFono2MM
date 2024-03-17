@@ -9,14 +9,10 @@ import time
 call_i = 1
 
 class MMModemVoiceInterface(ServiceInterface):
-    def __init__(self, index, bus, ofono_client, modem_name, ofono_modem, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, bus, ofono_client, ofono_props, ofono_interfaces, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Voice')
-        self.index = index
         self.bus = bus
         self.ofono_client = ofono_client
-        self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
-        self.modem_name = modem_name
-        self.ofono_modem = ofono_modem
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
@@ -33,9 +29,12 @@ class MMModemVoiceInterface(ServiceInterface):
                 self.emit_properties_changed({prop: self.props[prop].value})
 
     async def init_calls(self):
-        if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
-            self.props['EmergencyOnly'] = Variant('b', self.ofono_interface_props['org.ofono.SimManager']['FixedDialing'].value)
-        else:
+        try:
+            if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
+                self.props['EmergencyOnly'] = Variant('b', self.ofono_interface_props['org.ofono.SimManager']['FixedDialing'].value)
+            else:
+                self.props['EmergencyOnly'] = Variant('b', False)
+        except Exception as e:
             self.props['EmergencyOnly'] = Variant('b', False)
 
         if 'org.ofono.VoiceCallManager' in self.ofono_interfaces:
@@ -53,7 +52,7 @@ class MMModemVoiceInterface(ServiceInterface):
             else:
                 self.props['EmergencyOnly'] = Variant('b', False)
 
-            mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
+            mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces)
             mm_call_interface.props.update({
                 'State': Variant('u', 3), # ringing in MM_CALL_STATE_RINGING_IN
                 'StateReason': Variant('u', 2), # incoming new MM_CALL_STATE_REASON_INCOMING_NEW
@@ -141,7 +140,7 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
+        mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces)
         mm_call_interface.props.update({
             'State': Variant('u', 2), # ringing out MM_CALL_STATE_RINGING_OUT
             'StateReason': Variant('u', 0), # outgoing started MM_CALL_STATE_REASON_UNKNOWN

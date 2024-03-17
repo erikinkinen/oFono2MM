@@ -3,11 +3,9 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 class MMModemSignalInterface(ServiceInterface):
-    def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, ofono_props, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Signal')
-        self.mm_modem = mm_modem
         self.ofono_props = ofono_props
-        self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.props = {
             'Rate': Variant('u', 0),

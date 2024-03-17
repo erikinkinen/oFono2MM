@@ -3,9 +3,8 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 class MMModemCDMAInterface(ServiceInterface):
-    def __init__(self, mm_modem):
+    def __init__(self):
         super().__init__('org.freedesktop.ModemManager1.Modem.ModemCdma')
-        self.mm_modem = mm_modem
         self.props = {
             'ActivationState': Variant('u', 0), # hardcoded dummy value unknown MM_MODEM_CDMA_ACTIVATION_STATE_UNKNOWN
             'Meid': Variant('s', ''),
