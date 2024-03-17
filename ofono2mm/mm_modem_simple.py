@@ -27,7 +27,7 @@ class MMModemSimpleInterface(ServiceInterface):
              'cdma-nid': Variant('u', 0)
         }
 
-    async def set_props(self):
+    def set_props(self):
         old_props = self.props.copy()
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['m3gpp-operator-name'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
@@ -138,7 +138,7 @@ class MMModemSimpleInterface(ServiceInterface):
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
-        await self.set_props()
+        self.set_props()
         return self.props
 
     async def network_manager_set_apn(self):
@@ -228,3 +228,16 @@ class MMModemSimpleInterface(ServiceInterface):
             return True
         else:
             return False
+
+    def ofono_changed(self, name, varval):
+        self.ofono_props[name] = varval
+        self.set_props()
+
+    def ofono_interface_changed(self, iface):
+        def ch(name, varval):
+            if iface in self.ofono_interface_props:
+                self.ofono_interface_props[iface][name] = varval
+
+            self.set_props()
+
+        return ch
