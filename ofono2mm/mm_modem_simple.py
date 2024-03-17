@@ -8,9 +8,10 @@ import time
 import dbus.mainloop.glib
 
 class MMModemSimpleInterface(ServiceInterface):
-    def __init__(self, mm_modem, ofono_interfaces, ofono_interface_props):
+    def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Simple')
         self.mm_modem = mm_modem
+        self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.props = {
