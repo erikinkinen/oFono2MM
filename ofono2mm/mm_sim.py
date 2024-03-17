@@ -102,8 +102,8 @@ class MMSimInterface(ServiceInterface):
             await self.ofono_interfaces['org.ofono.SimManager'].call_change_pin('pin', old_pin, new_pin)
 
     @method()
-    async def SetPreferredNetwork(self, preferred_networks: 'a(su)'):
-        pass # ofono has no way to actually set this info, just pass
+    async def SetPreferredNetworks(self, preferred_networks: 'a(su)'):
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'setting preferred networks is unsupported')
 
     @dbus_property(access=PropertyAccess.READ)
     def Active(self) -> 'b':
