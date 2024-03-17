@@ -94,7 +94,8 @@ class MMBearerInterface(ServiceInterface):
         return self.props['Properties'].value
 
     async def set_props(self):
-        old_props = self.props.copy()
+        old_props = self.props
+
         if 'org.ofono.ConnectionManager' in self.ofono_interface_props:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             self.context_names = []
@@ -133,15 +134,19 @@ class MMBearerInterface(ServiceInterface):
             ofono_interface = self.ofono_client["ofono_modem"][self.modem_name]['org.ofono.ConnectionManager']
 
             roaming_allowed = None
-            connman_props = await ofono_interface.call_get_properties()
+            ofono_props = await ofono_interface.call_get_properties()
 
-            if connman_props.get('RoamingAllowed', Variant('b', True).value) != "":
-                roaming_allowed = connman_props.get('RoamingAllowed', Variant('b', True).value).value
+            if ofono_props.get('RoamingAllowed', Variant('b', True).value) != "":
+                roaming_allowed = ofono_props.get('RoamingAllowed', Variant('b', True).value).value
 
                 if roaming_allowed == True:
                     self.props['Properties'].value['roaming-allowance'] = Variant('u', 2) # roaming partner network MM_BEARER_ROAMING_ALLOWANCE_PARTNER
                 elif roaming_allowed == False:
                     self.props['Properties'].value['roaming-allowance'] = Variant('u', 0) # roaming none MM_BEARER_ROAMING_ALLOWANCE_NONE
+
+        for prop in self.props:
+            if self.props[prop].value != old_props[prop].value:
+                self.emit_properties_changed({prop: self.props[prop].value})
 
     @method()
     async def Connect(self):
