@@ -50,6 +50,8 @@ class MMModemSignalInterface(ServiceInterface):
         }
 
     def set_props(self):
+        old_props = self.props
+
         if 'org.ofono.NetworkMonitor' in self.ofono_interface_props:
             self.props['Cdma'].value['rssi'] = Variant('d', self.ofono_interface_props['org.ofono.NetworkMonitor']['ReceivedSignalStrength'].value if "ReceivedSignalStrength" in self.ofono_interface_props['org.ofono.NetworkMonitor'] else 0)
             self.props['Evdo'].value['rssi'] = Variant('d', self.ofono_interface_props['org.ofono.NetworkMonitor']['ReceivedSignalStrength'].value if "ReceivedSignalStrength" in self.ofono_interface_props['org.ofono.NetworkMonitor'] else 0)
@@ -92,6 +94,10 @@ class MMModemSignalInterface(ServiceInterface):
             self.props['Nr5g'].value['rsrp'] = Variant('d', 0)
 
             self.props['Umts'].value['rscp'] = Variant('d', 0)
+
+        for prop in self.props:
+            if self.props[prop].value != old_props[prop].value:
+                self.emit_properties_changed({prop: self.props[prop].value})
 
     @method()
     async def Setup(self, rate: 'u'):
@@ -137,3 +143,16 @@ class MMModemSignalInterface(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ)
     def Nr5g(self) -> 'a{sv}':
         return self.props['Nr5g'].value
+
+    def ofono_changed(self, name, varval):
+        self.ofono_props[name] = varval
+        self.set_props()
+
+    def ofono_interface_changed(self, iface):
+        def ch(name, varval):
+            if iface in self.ofono_interface_props:
+                self.ofono_interface_props[iface][name] = varval
+
+            self.set_props()
+
+        return ch
