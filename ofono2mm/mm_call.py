@@ -61,10 +61,14 @@ class MMCallInterface(ServiceInterface):
 
     @method()
     async def Hangup(self):
-        # ofono_interface = self.ofono_client["ofono_modem"][self.voicecall]['org.ofono.VoiceCall']
-        # await ofono_interface.call_hangup()
         ofono2mm_print("Hanging up call", self.verbose)
-        await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
+
+        try:
+            ofono_interface = self.ofono_client["ofono_modem"][self.voicecall]['org.ofono.VoiceCall']
+            await ofono_interface.call_hangup()
+        except Exception as e:
+            await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
+
         self.props['State'] = Variant('u', 7) # terminated MM_CALL_STATE_TERMINATED
         self.props['StateReason'] = Variant('u', 4) # terminated MM_CALL_STATE_REASON_TERMINATED
 
