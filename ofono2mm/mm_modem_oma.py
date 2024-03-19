@@ -2,9 +2,13 @@ from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModemOmaInterface(ServiceInterface):
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Oma')
+        ofono2mm_print("Initializing OMA interface", verbose)
+        self.verbose = verbose
         self.props = {
             'Features': Variant('u', 0),
             'PendingNetworkInitiatedSessions': Variant('a(uu)', []),
@@ -30,6 +34,7 @@ class MMModemOmaInterface(ServiceInterface):
 
     @signal()
     def SessionStateChanged(self, old_session_state: 'i', new_session_state: 'i', session_state_failed_reason: 'u'):
+        ofono2mm_print(f"Signal: Session state changed with old sttate {old_session_state} and new state {new_session_state}. failed reason (if any): {session_state_failed_reason}", self.verbose)
         pass
 
     @dbus_property(access=PropertyAccess.READ)

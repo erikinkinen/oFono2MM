@@ -3,14 +3,18 @@ from dbus_next.service import (ServiceInterface,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModem3gppInterface(ServiceInterface):
-    def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Modem3gpp')
+        ofono2mm_print("Initializing 3GPP interface", verbose)
         self.ofono_client = ofono_client
         self.modem_name = modem_name
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
+        self.verbose = verbose
         self.props = {
             'Imei': Variant('s', ''),
             'RegistrationState': Variant('u', 0), # on runtime idle MM_MODEM_3GPP_REGISTRATION_STATE_IDLE
@@ -36,6 +40,8 @@ class MMModem3gppInterface(ServiceInterface):
         }
 
     def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props.copy()
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['OperatorName'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
@@ -90,6 +96,8 @@ class MMModem3gppInterface(ServiceInterface):
 
     @method()
     async def Register(self, operator_id: 's'):
+        ofono2mm_print(f"Register with operator id {operator_id}", self.verbose)
+
         if operator_id == "":
             if 'org.ofono.NetworkRegistration' in self.ofono_interfaces:
                 try:
@@ -106,6 +114,8 @@ class MMModem3gppInterface(ServiceInterface):
 
     @method()
     async def Scan(self) -> 'aa{sv}':
+        ofono2mm_print("Scanning the network", self.verbose)
+
         operators = []
         ofono_operators = await self.ofono_interfaces['org.ofono.NetworkRegistration'].call_scan()
         for ofono_operator in ofono_operators:

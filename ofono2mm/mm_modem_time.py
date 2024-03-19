@@ -3,12 +3,16 @@ from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModemTimeInterface(ServiceInterface):
-    def __init__(self, ofono_client, modem_name, ofono_interfaces):
+    def __init__(self, ofono_client, modem_name, ofono_interfaces, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Time')
+        ofono2mm_print("Initializing Time interface", verbose)
         self.ofono_client = ofono_client
         self.modem_name = modem_name
         self.ofono_interfaces = ofono_interfaces
+        self.verbose = verbose
         self.network_time = datetime.now().isoformat()
         self.network_timezone = {
             'offset': Variant('i', 0),
@@ -17,11 +21,13 @@ class MMModemTimeInterface(ServiceInterface):
         }
 
     async def init_time(self):
+        ofono2mm_print("Initializing signals", self.verbose)
+
         if 'org.ofono.NetworkTime' in self.ofono_interfaces:
             self.ofono_interfaces['org.ofono.NetworkTime'].on_network_time_changed(self.update_time)
 
     async def update_time(self, time):
-        # print(time)
+        ofono2mm_print(f"Updating time to {time}", self.verbose)
         utc_time = time['UTC'].value
         network_time = datetime.fromtimestamp(utc_time, tz=timezone.utc)
         self.network_time = network_time.isoformat()
@@ -37,6 +43,8 @@ class MMModemTimeInterface(ServiceInterface):
 
     @method()
     async def GetNetworkTime(self) -> 's':
+        ofono2mm_print("Returning network time", self.verbose)
+
         if 'org.ofono.NetworkTime' in self.ofono_interfaces:
             ofono_interface = self.ofono_client["ofono_modem"][self.modem_name]['org.ofono.NetworkTime']
             output = await ofono_interface.call_get_network_time()
@@ -59,15 +67,13 @@ class MMModemTimeInterface(ServiceInterface):
 
     @signal()
     def NetworkTimeChanged(self, time: 's') -> 's':
-        # print(time)
+        ofono2mm_print(f"Signal: Network time changed to time {time}", self.verbose)
         self.network_time = time
         return time
 
-    def update_network_time(self):
-        self.network_time = datetime.now().isoformat()
-        self.NetworkTimeChanged(self.network_time)
-
     def update_network_timezone(self, offset, dst_offset, leap_seconds):
+        ofono2mm_print(f"Update network timezone with offset {offset} dst offset {dst_offset} and leap_seconds {leap_seconds}", self.verbose)
+
         self.network_timezone = {
             'offset': Variant('i', offset),
             'dst-offset': Variant('i', dst_offset),

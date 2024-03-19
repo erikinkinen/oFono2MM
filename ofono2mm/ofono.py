@@ -3,6 +3,8 @@ from dbus_next.service import (ServiceInterface,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError, BusType
 
+from ofono2mm.logging import ofono2mm_print
+
 import asyncio
 
 class ObjectProxy:

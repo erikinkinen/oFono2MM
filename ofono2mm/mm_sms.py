@@ -3,9 +3,13 @@ from dbus_next.service import (ServiceInterface, method,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMSmsInterface(ServiceInterface):
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Sms')
+        ofono2mm_print("Initializing SMS interface", verbose)
+        self.verbose = verbose
         self.props = {
             "State": Variant('u', 0), # default value unknown MM_SMS_STATE_UNKNOWN
             "PduType": Variant('u', 0), # default value unknown MM_SMS_PDU_TYPE_UNKNOWN
@@ -26,10 +30,12 @@ class MMSmsInterface(ServiceInterface):
 
     @method()
     def Send(self):
+        ofono2mm_print("Sending SMS", self.verbose)
         pass
 
     @method()
     def Store(self, storage: 'u'):
+        ofono2mm_print(f"Storing SMS to {storage}", self.verbose)
         pass
 
     @dbus_property(access=PropertyAccess.READ)

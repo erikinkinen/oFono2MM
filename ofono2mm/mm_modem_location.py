@@ -1,14 +1,20 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
+
 from datetime import datetime
+
 import gi
 gi.require_version('Geoclue', '2.0')
 from gi.repository import Geoclue
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModemLocationInterface(ServiceInterface):
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Location')
+        ofono2mm_print("Initializing Location interface", verbose)
+        self.verbose = verbose
         utc_time = datetime.utcnow().isoformat()
 
         self.location = {
@@ -32,11 +38,14 @@ class MMModemLocationInterface(ServiceInterface):
 
     @method()
     def Setup(self, sources: 'u', signal_location: 'b') -> None:
+        ofono2mm_print(f"Setup location with source flag {source} and signal location {signal_location}", self.verbose)
         self.props['Enabled'] = Variant('u', sources)
         self.props['SignalsLocation'] = Variant('b', signal_location)
 
     @method()
     async def GetLocation(self) -> 'a{uv}':
+        ofono2mm_print("Returning current location", self.verbose)
+
         geoclue = Geoclue.Simple.new_sync('ModemManager', Geoclue.AccuracyLevel.NEIGHBORHOOD, None)
         location = geoclue.get_location()
 
@@ -67,6 +76,7 @@ class MMModemLocationInterface(ServiceInterface):
 
     @method()
     def SetGpsRefreshRate(self, rate: 'u') -> None:
+        ofono2mm_print(f"Setting GPS refresh rate to {rate}", self.verbose)
         self.props['GpsRefreshRate'] = Variant('u', rate)
 
     @dbus_property(access=PropertyAccess.READ)

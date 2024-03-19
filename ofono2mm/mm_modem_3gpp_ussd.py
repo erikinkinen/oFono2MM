@@ -2,10 +2,14 @@ from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModem3gppUssdInterface(ServiceInterface):
-    def __init__(self, ofono_interfaces):
+    def __init__(self, ofono_interfaces, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Modem3gpp.Ussd')
+        ofono2mm_print("Initializing 3GPP USSD interface", verbose)
         self.ofono_interfaces = ofono_interfaces
+        self.verbose = verbose
         self.props = {
             'State': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_USSD_SESSION_STATE_UNKNOWN
             'NetworkNotification': Variant('s', ''),
@@ -14,16 +18,22 @@ class MMModem3gppUssdInterface(ServiceInterface):
 
     @method()
     async def Initiate(self, command: 's') -> 's':
+        ofono2mm_print(f"Initiaate USSD with command {command}", self.verbose)
+
         result = await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_initiate(command)
         return result[1].value
 
     @method()
     async def Respond(self, response: 's') -> 's':
+        ofono2mm_print(f"Respond to 3GPP with command {response}", self.verbose)
+
         result = await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_respond(response)
         return result
 
     @method()
     async def Cancel(self):
+        ofono2mm_print("Cancelling USSD request", self.verbose)
+
         try:
             await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_cancel()
         except Exception as e:
@@ -52,6 +62,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         return self.props['State'].value
 
     def save_notification_received(self, message):
+        ofono2mm_print(f"Save notification with message {message}", self.verbose)
         self.props['NetworkNotification'] = Variant('s', message)
 
     @dbus_property(access=PropertyAccess.READ)
@@ -59,6 +70,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         return self.props['NetworkNotification'].value
 
     def save_request_received(self, message):
+        ofono2mm_print(f"Save request with message {message}", self.verbose)
         self.props['NetworkNotification'] = Variant('s', message)
 
     @dbus_property(access=PropertyAccess.READ)

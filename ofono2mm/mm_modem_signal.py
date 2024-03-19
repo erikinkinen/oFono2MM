@@ -2,11 +2,15 @@ from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModemSignalInterface(ServiceInterface):
-    def __init__(self, ofono_props, ofono_interface_props):
+    def __init__(self, ofono_props, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Signal')
+        ofono2mm_print("Initializing Signal interface", verbose)
         self.ofono_props = ofono_props
         self.ofono_interface_props = ofono_interface_props
+        self.verbose = verbose
         self.props = {
             'Rate': Variant('u', 0),
             'RssiThreshold': Variant('u', 0),
@@ -49,6 +53,8 @@ class MMModemSignalInterface(ServiceInterface):
         }
 
     def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props
 
         if 'org.ofono.NetworkMonitor' in self.ofono_interface_props:
@@ -100,6 +106,7 @@ class MMModemSignalInterface(ServiceInterface):
 
     @method()
     async def Setup(self, rate: 'u'):
+        ofono2mm_print(f"Setup with rate {rate}", self.verbose)
         self.set_props()
         self.props['Rate'] = Variant('u', rate)
 

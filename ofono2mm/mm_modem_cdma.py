@@ -2,9 +2,13 @@ from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMModemCDMAInterface(ServiceInterface):
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.ModemCdma')
+        ofono2mm_print("Initializing CDMA interface", verbose)
+        self.verbose = verbose
         self.props = {
             'ActivationState': Variant('u', 0), # hardcoded dummy value unknown MM_MODEM_CDMA_ACTIVATION_STATE_UNKNOWN
             'Meid': Variant('s', ''),

@@ -3,12 +3,16 @@ from dbus_next.service import (ServiceInterface,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
+from ofono2mm.logging import ofono2mm_print
+
 class MMSimInterface(ServiceInterface):
-    def __init__(self, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Sim')
+        ofono2mm_print("Initializing SIM interface", verbose)
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
+        self.verbose = verbose
         self.props = {
             'Active': Variant('b', True),
             'SimIdentifier': Variant('s', ''),
@@ -26,6 +30,8 @@ class MMSimInterface(ServiceInterface):
         }
 
     def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props
 
         if 'org.ofono.SimManager' in self.ofono_interface_props:
@@ -74,16 +80,22 @@ class MMSimInterface(ServiceInterface):
 
     @method()
     async def SendPin(self, pin: 's'):
+        ofono2mm_print(f"Sending pin {pin}", self.verbose)
+
         if 'org.ofono.SimManager' in self.ofono_interfaces:
             await self.ofono_interfaces['org.ofono.SimManager'].call_enter_pin('pin', pin)
 
     @method()
     async def SendPuk(self, puk: 's', pin: 's'):
+        ofono2mm_print(f"Sending puk {puk} pin {pin}", self.verbose)
+
         if 'org.ofono.SimManager' in self.ofono_interfaces:
             await self.ofono_interfaces['org.ofono.SimManager'].call_reset_pin('pin', puk, pin)
 
     @method()
     async def EnablePin(self, pin: 's', enabled: 'b'):
+        ofono2mm_print(f"Enabling pin: {enabled} set pin to {pin}", self.verbose)
+
         if 'org.ofono.SimManager' in self.ofono_interfaces:
             if enabled:
                 await self.ofono_interfaces['org.ofono.SimManager'].call_lock_pin('pin', pin)
@@ -92,6 +104,8 @@ class MMSimInterface(ServiceInterface):
 
     @method()
     async def ChangePin(self, old_pin: 's', new_pin: 's'):
+        ofono2mm_print(f"Change pin from {old_pin} to {new_pin}", self.verbose)
+
         if 'org.ofono.SimManager' in self.ofono_interfaces:
             await self.ofono_interfaces['org.ofono.SimManager'].call_change_pin('pin', old_pin, new_pin)
 

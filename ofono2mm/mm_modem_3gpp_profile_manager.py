@@ -2,13 +2,18 @@ from dbus_next.service import (ServiceInterface,
                                method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
+
+from ofono2mm.logging import ofono2mm_print
+
 import asyncio
 
 class MMModem3gppProfileManagerInterface(ServiceInterface):
-    def __init__(self, ofono_client, modem_name):
+    def __init__(self, ofono_client, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Modem3gpp.ProfileManager')
+        ofono2mm_print("Initializing 3GPP profile manager interface", verbose)
         self.ofono_client = ofono_client
         self.modem_name = modem_name
+        self.verbose = verbose
         self.index_field = 'profile-id'
         self.props = {
             "apn": Variant('s', ''),
@@ -27,6 +32,7 @@ class MMModem3gppProfileManagerInterface(ServiceInterface):
 
     @method()
     async def List(self) -> 'aa{sv}':
+        ofono2mm_print("Returning list of profiles", self.verbose)
         properties = {}
         for key, value in self.props.items():
             if key != "roaming-allowance":
@@ -36,6 +42,8 @@ class MMModem3gppProfileManagerInterface(ServiceInterface):
 
     @method()
     async def Set(self, requested_properties: 'a{sv}') -> 'a{sv}':
+        ofono2mm_print(f"Setting profile with properties {requested_properties}", self.verbose)
+
         stored_properties = {}
         for key, value in requested_properties.items():
             if key in self.props:
@@ -55,12 +63,15 @@ class MMModem3gppProfileManagerInterface(ServiceInterface):
 
     @method()
     async def Delete(self, properties: 'a{sv}'):
+        ofono2mm_print(f"Deleting profile with properties {properties}", self.verbose)
+
         for key, value in properties.items():
             if key in self.props:
                 del self.props[key]
 
     @signal()
     def Updated(self):
+        ofono2mm_print(f"Signal: Updated emitted", self.verbose)
         pass
 
     @dbus_property(access=PropertyAccess.READ)

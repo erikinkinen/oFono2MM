@@ -4,13 +4,14 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError, BusType
 
 from ofono2mm.utils import async_retryable
+from ofono2mm.logging import ofono2mm_print
 
 import asyncio
 
 class MMBearerInterface(ServiceInterface):
-    def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, mm_modem):
+    def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, mm_modem, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Bearer')
-        # print(f"Creating new bearer interface for {index}")
+        ofono2mm_print("Initializing Bearer interface", verbose)
         self.ofono_client = ofono_client
         self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
         self.modem_name = modem_name
@@ -18,6 +19,7 @@ class MMBearerInterface(ServiceInterface):
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.mm_modem = mm_modem
+        self.verbose = verbose
         self.disconnecting = False
         self.reconnect_task = None
         self.props = {
@@ -91,6 +93,8 @@ class MMBearerInterface(ServiceInterface):
         return self.props['Properties'].value
 
     async def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props
 
         if 'org.ofono.ConnectionManager' in self.ofono_interface_props:
@@ -147,6 +151,7 @@ class MMBearerInterface(ServiceInterface):
 
     @method()
     async def Connect(self):
+        ofono2mm_print("Connecting", self.verbose)
         await self.doConnect()
 
     @async_retryable()
@@ -165,6 +170,7 @@ class MMBearerInterface(ServiceInterface):
 
     @method()
     async def Disconnect(self):
+        ofono2mm_print("Disconnecting", self.verbose)
         await self.doDisconnect()
 
     async def cancel_reconnect_task(self):
@@ -188,6 +194,8 @@ class MMBearerInterface(ServiceInterface):
         await ofono_ctx_interface.call_set_property("Active", Variant('b', False))
 
     async def add_auth_ofono(self, username, password):
+        ofono2mm_print(f"Add authentication to oFono with username {username} and password {password}", self.verbose)
+
         ofono_ctx_interface = self.ofono_client["ofono_context"][self.ofono_ctx]['org.ofono.ConnectionContext']
         try:
             await ofono_ctx_interface.call_set_property("Username", Variant('s', username))
@@ -196,6 +204,8 @@ class MMBearerInterface(ServiceInterface):
             pass
 
     def ofono_context_changed(self, propname, value):
+        ofono2mm_print(f"oFono context changed for prop name {propname} set to value {value}", self.verbose)
+
         if propname == "Active":
             if self.disconnecting and (not value.value):
                 self.disconnecting = False

@@ -2,18 +2,22 @@ from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+from ofono2mm.logging import ofono2mm_print
+
 import NetworkManager
 import uuid
 import time
 import dbus.mainloop.glib
 
 class MMModemSimpleInterface(ServiceInterface):
-    def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Simple')
+        ofono2mm_print("Initializing Simple interface", verbose)
         self.mm_modem = mm_modem
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
+        self.verbose = verbose
         self.props = {
              'state': Variant('u', 7), # on runtime enabled MM_MODEM_STATE_ENABLED
              'signal-quality': Variant('(ub)', [0, True]),
@@ -29,6 +33,8 @@ class MMModemSimpleInterface(ServiceInterface):
         }
 
     def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props
 
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
@@ -102,6 +108,8 @@ class MMModemSimpleInterface(ServiceInterface):
 
     @method()
     async def Connect(self, properties: 'a{sv}') -> 'o':
+        ofono2mm_print(f"Connecting with properties {properties}", self.verbose)
+
         try:
             await self.props()
         except Exception as e:
@@ -130,6 +138,8 @@ class MMModemSimpleInterface(ServiceInterface):
 
     @method()
     async def Disconnect(self, path: 'o'):
+        ofono2mm_print(f"Disconnecting object path {path}", self.verbose)
+
         if path == '/':
             for b in self.mm_modem.bearers:
                 try:
@@ -144,10 +154,13 @@ class MMModemSimpleInterface(ServiceInterface):
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
+        ofono2mm_print("Returning status", self.verbose)
         self.set_props()
         return self.props
 
     async def network_manager_set_apn(self):
+        ofono2mm_print(f"Generating Network Manager connection", self.verbose)
+
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
         current_timestamp = int(time.time())
@@ -203,12 +216,14 @@ class MMModemSimpleInterface(ServiceInterface):
         try:
             if self.network_manager_connection_exists(f'{apn}') == False:
                 conn = NetworkManager.Settings.AddConnection(connection_settings)
-                #print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.")
+                ofono2mm_print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.", self.verbose)
             return True
         except Exception as e:
             return False
 
     def network_manager_connection_exists(self, target_apn):
+        ofono2mm_print(f"Checking if Network Manager connection exists for {target_apn}", self.verbose)
+
         found = False
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
@@ -229,7 +244,7 @@ class MMModemSimpleInterface(ServiceInterface):
                 if apn == target_apn:
                     found = True
 
-        #print(found)
+        ofono2mm_print(f"Connection for APN {target_apn} exists: {found}", self.verbose)
         if found:
             return True
         else:

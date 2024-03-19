@@ -3,25 +3,30 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
 from ofono2mm.mm_call import MMCallInterface
+from ofono2mm.logging import ofono2mm_print
 
 import time
 
 call_i = 1
 
 class MMModemVoiceInterface(ServiceInterface):
-    def __init__(self, bus, ofono_client, ofono_props, ofono_interfaces, ofono_interface_props):
+    def __init__(self, bus, ofono_client, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Voice')
+        ofono2mm_print("Initializing Voice interface", verbose)
         self.bus = bus
         self.ofono_client = ofono_client
         self.ofono_props = ofono_props
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
+        self.verbose = verbose
         self.props = {
             'Calls': Variant('ao', []),
             'EmergencyOnly': Variant('b', False),
         }
 
     def set_props(self):
+        ofono2mm_print("Setting properties", self.verbose)
+
         old_props = self.props
 
         for prop in self.props:
@@ -29,6 +34,8 @@ class MMModemVoiceInterface(ServiceInterface):
                 self.emit_properties_changed({prop: self.props[prop].value})
 
     async def init_calls(self):
+        ofono2mm_print("Initializing signals", self.verbose)
+
         try:
             if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
                 self.props['EmergencyOnly'] = Variant('b', self.ofono_interface_props['org.ofono.SimManager']['FixedDialing'].value)
@@ -44,6 +51,8 @@ class MMModemVoiceInterface(ServiceInterface):
             self.ofono_interfaces['org.ofono.VoiceCallManager'].on_call_removed(self.remove_call)
 
     async def add_call(self, path, props):
+        ofono2mm_print(f"Add call with object path {path} and properties {props}", self.verbose)
+
         if props['State'].value == 'incoming':
             global call_i
 
@@ -52,7 +61,7 @@ class MMModemVoiceInterface(ServiceInterface):
             else:
                 self.props['EmergencyOnly'] = Variant('b', False)
 
-            mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces)
+            mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces, self.verbose)
             mm_call_interface.props.update({
                 'State': Variant('u', 3), # ringing in MM_CALL_STATE_RINGING_IN
                 'StateReason': Variant('u', 2), # incoming new MM_CALL_STATE_REASON_INCOMING_NEW
@@ -69,6 +78,8 @@ class MMModemVoiceInterface(ServiceInterface):
             call_i += 1
 
     async def remove_call(self, path):
+        ofono2mm_print(f"Remove call with object path {path}", self.verbose)
+
         global call_i
 
         call_i -= 1
@@ -86,7 +97,6 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        # print(f"call deleted: {path}")
         if 'org.ofono.ConnectionManager' in self.ofono_interfaces:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             self.context_names = []
@@ -115,10 +125,14 @@ class MMModemVoiceInterface(ServiceInterface):
 
     @method()
     async def ListCalls(self) -> 'ao':
+        ofono2mm_print("Returning list of calls", self.verbose)
+
         return self.props['Calls'].value
 
     @method()
     async def DeleteCall(self, path: 'o'):
+        ofono2mm_print(f"Deleting call with object path {path}", self.verbose)
+
         if path in self.props['Calls'].value:
             await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
             self.props['Calls'].value.remove(path)
@@ -133,6 +147,8 @@ class MMModemVoiceInterface(ServiceInterface):
 
     @method()
     async def CreateCall(self, properties: 'a{sv}') -> 'o':
+        ofono2mm_print(f"Creating call with properties {properties}", self.verbose)
+
         global call_i
 
         if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
@@ -140,7 +156,7 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces)
+        mm_call_interface = MMCallInterface(self.ofono_client, self.ofono_interfaces, self.verbose)
         mm_call_interface.props.update({
             'State': Variant('u', 2), # ringing out MM_CALL_STATE_RINGING_OUT
             'StateReason': Variant('u', 0), # outgoing started MM_CALL_STATE_REASON_UNKNOWN
@@ -160,36 +176,43 @@ class MMModemVoiceInterface(ServiceInterface):
 
     @method()
     async def HoldAndAccept(self):
+        ofono2mm_print("Holding and accepting call", self.verbose)
         result = await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hold_and_answer()
 
     @method()
     async def HangupAndAccept(self):
+        ofono2mm_print("Hanging up and accepting call", self.verbose)
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_release_and_answer()
 
     @method()
     async def HangupAll(self):
+        ofono2mm_print("Hanging up all calls", self.verbose)
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
 
     @method()
     async def Transfer(self):
+        ofono2mm_print("Transfering call", self.verbose)
+
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_transfer()
 
     @method()
     def CallWaitingSetup(self, enable: 'b'):
+        ofono2mm_print(f"Activate call waiting network: {enable}", self.verbose)
         pass
 
     @method()
     def CallWaitingQuery(self) -> 'b':
+        ofono2mm_print("Query the status of call waiting network", self.verbose)
         pass
 
     @signal()
     def CallAdded(self, path) -> 's':
-        # print(f"call added: {path}")
+        ofono2mm_print(f"Signal: Call added with object path {path}", self.verbose)
         return path
 
     @signal()
     def CallDeleted(self, path) -> 'o':
-        # print(f"call deleted: {path}")
+        ofono2mm_print(f"Signal: Call deleted with object path {path}", self.verbose)
         return path
 
     @dbus_property(access=PropertyAccess.READ)
