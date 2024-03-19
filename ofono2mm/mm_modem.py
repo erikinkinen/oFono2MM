@@ -21,6 +21,9 @@ from ofono2mm.mm_modem_voice import MMModemVoiceInterface
 from ofono2mm.logging import ofono2mm_print
 
 import asyncio
+import glob
+import time
+import re
 
 bearer_i = 0
 
@@ -916,9 +919,52 @@ class MMModemInterface(ServiceInterface):
         return [cell_info]
 
     @method()
-    def Command(self, cmd: 's', timeout: 'u') -> 's':
+    async def Command(self, cmd: 's', timeout: 'u') -> 's':
         ofono2mm_print(f"Running command {cmd} with timeout {timeout}", self.verbose)
-        return ''
+
+        if cmd == '':
+            return ''
+
+        if cmd[:2] != "AT":
+            return ''
+
+        smd_devices = glob.glob('/dev/smd*')
+
+        smd_devices.sort(key=lambda s: [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)])
+        if smd_devices:
+            device_path = smd_devices[0]
+        else:
+            return ''
+
+        data_to_write = f"{cmd}\r"
+
+        with open(device_path, 'w') as device_file:
+            device_file.write(data_to_write)
+
+        with open(device_path, 'r') as device_file:
+            start_time = time.time()
+            received_data = ""
+            while True:
+                line = device_file.readline()
+                if line:
+                    if time.time() - start_time > 5:
+                        return ''
+
+                    received_data += line
+                    if "OK" in received_data:
+                        break
+                    if "ERROR" in received_data:
+                        break
+
+                time.sleep(0.1)
+
+        data = received_data.strip()
+        data_print = data.replace('\n', ' ')
+        if data != '':
+            ofono2mm_print(f"Modem returned: {data_print}", self.verbose)
+            return data
+        else:
+            return ''
 
     @signal()
     def StateChanged(self, old, new, reason) -> 'iiu':
