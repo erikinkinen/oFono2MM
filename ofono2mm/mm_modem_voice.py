@@ -203,7 +203,7 @@ class MMModemVoiceInterface(ServiceInterface):
     @method()
     def CallWaitingQuery(self) -> 'b':
         ofono2mm_print("Query the status of call waiting network", self.verbose)
-        pass
+        return True
 
     @signal()
     def CallAdded(self, path) -> 's':
