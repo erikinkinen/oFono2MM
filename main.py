@@ -198,13 +198,33 @@ class MMInterface(ServiceInterface):
         ofono2mm_print(f"Inhibit device with uid {uid} set to {inhibit}", self.verbose)
         pass
 
+def get_version():
+    return "1.22.0"
+
+def print_version():
+    version = get_version()
+    print(f"oFono2MM version {version}")
+
+def custom_help(parser):
+    parser.print_help()
+    print("\nDBus system service to control mobile broadband modems through oFono.")
+
 async def main():
-    parser = argparse.ArgumentParser(description="Run the ModemManager interface.")
+    parser = argparse.ArgumentParser(description="Run the ModemManager interface.", add_help=False)
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output.')
+    parser.add_argument('-V', '--version', action='store_true', help='Print version.')
+    parser.add_argument('-h', '--help', action='store_true', help='Show help.')
 
     args = parser.parse_args()
 
-    global verbose
+    if args.version:
+        print_version()
+        return
+
+    if args.help:
+        custom_help(parser)
+        return
+
     verbose = args.verbose
 
     bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
