@@ -260,7 +260,7 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_signal_interface(self):
         ofono2mm_print("Initialize Signal interface", self.verbose)
 
-        self.mm_modem_signal_interface = MMModemSignalInterface(self.ofono_props, self.ofono_interface_props)
+        self.mm_modem_signal_interface = MMModemSignalInterface(self.ofono_props, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_signal_interface)
         self.mm_modem_signal_interface.set_props()
 
