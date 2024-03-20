@@ -22,3 +22,11 @@ Depends: ${misc:Depends},
          python3-networkmanager,
          python3-dbus
 Description: A simple python script implementing ModemManager DBus API and using ofono to manage the modem
+
+Package: ofonoctl
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3-dbus,
+         python3-tabulate
+Description: control application for the ofono daemon
