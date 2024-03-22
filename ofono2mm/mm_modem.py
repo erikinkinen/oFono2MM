@@ -49,6 +49,7 @@ class MMModemInterface(ServiceInterface):
         self.mm_modem_messaging_interface = False
         self.mm_modem_simple_interface = False
         self.mm_modem_signal_interface = False
+        self.selected_current_mode = []
         self.sim = Variant('o', f'/org/freedesktop/ModemManager/SIM/{self.index}')
         self.bearers = {}
         self.props = {
@@ -686,11 +687,10 @@ class MMModemInterface(ServiceInterface):
             supported_modes.append([2, 0]) # none
 
         self.props['SupportedModes'] = Variant('a(uu)', supported_modes)
-        for mode in supported_modes:
-            if mode[1] == pref:
-                self.props['CurrentModes'] = Variant('(uu)', [mode[0], pref])
-            if mode[1] == 0 and mode[0] == pref:
-                self.props['CurrentModes'] = Variant('(uu)', [mode[0], 0]) # current mode none MM_MODEM_MODE_NONE
+        if self.selected_current_mode in supported_modes:
+            self.props['CurrentModes'] = Variant('(uu)', self.selected_current_mode)
+        else:
+            self.props['CurrentModes'] = Variant('(uu)', [8, 0]) # allowed 4g, preferred none
 
         if supported_modes == []:
             self.props['SupportedModes'] = Variant('a(uu)', [[0, 0]]) # allowed mode none, preferred mode none MM_MODEM_MODE_NONE
@@ -892,6 +892,8 @@ class MMModemInterface(ServiceInterface):
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'lte'))
                 elif modes[0] == 16:
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
+
+            self.selected_current_mode = modes
         else:
             raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'The given combination of allowed and preferred modes is not supported')
 
