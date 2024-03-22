@@ -148,7 +148,7 @@ class MMModemInterface(ServiceInterface):
             pass
 
         if self.mm_modem3gpp_interface:
-            self.mm_modem3gpp_interface.set_props()
+            await self.mm_modem3gpp_interface.set_props()
         if self.mm_sim_interface:
             self.mm_sim_interface.set_props()
         if self.mm_modem_messaging_interface and iface == "org.ofono.MessageManager":
@@ -177,7 +177,7 @@ class MMModemInterface(ServiceInterface):
 
         if self.mm_modem3gpp_interface:
             self.mm_modem3gpp_interface.ofono_interface_props = self.ofono_interface_props.copy()
-            self.mm_modem3gpp_interface.set_props()
+            await self.mm_modem3gpp_interface.set_props()
         if self.mm_sim_interface:
             self.mm_sim_interface.ofono_interface_props = self.ofono_interface_props.copy()
             self.mm_sim_interface.set_props()
@@ -206,7 +206,7 @@ class MMModemInterface(ServiceInterface):
 
         self.mm_modem3gpp_interface = MMModem3gppInterface(self.ofono_client, self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem3gpp_interface)
-        self.mm_modem3gpp_interface.set_props()
+        await self.mm_modem3gpp_interface.set_props()
 
     async def init_mm_3gpp_ussd_interface(self):
         ofono2mm_print("Initialize 3GPP USSD interface", self.verbose)
