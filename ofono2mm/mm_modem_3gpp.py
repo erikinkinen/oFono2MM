@@ -5,6 +5,8 @@ from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
 
+import asyncio
+
 class MMModem3gppInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Modem3gpp')
@@ -39,10 +41,11 @@ class MMModem3gppInterface(ServiceInterface):
             })
         }
 
-    def set_props(self):
+    async def set_props(self):
         ofono2mm_print("Setting properties", self.verbose)
 
         old_props = self.props.copy()
+
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['OperatorName'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
 
@@ -87,6 +90,26 @@ class MMModem3gppInterface(ServiceInterface):
         self.props['Imei'] = Variant('s', self.ofono_props['Serial'].value if 'Serial' in self.ofono_props else '')
         self.props['EnabledFacilityLocks'] = Variant('u', 0) # none MM_MODEM_3GPP_FACILITY_NONE
 
+        try:
+            contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
+            for ctx in contexts:
+                type = ctx[1].get('Type', Variant('s', '')).value
+                if type.lower() == "internet":
+                    apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+                    auth_method = ctx[1].get('AuthenticationMethod', Variant('s', '')).value
+
+                    self.props['InitialEpsBearerSettings'].value['apn'] = Variant('s', f'{apn}')
+                    if chosen_auth_method == 'none':
+                        self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 1) # none MM_BEARER_ALLOWED_AUTH_NONE
+                    elif chosen_auth_method == 'pap':
+                        self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 2) # pap MM_BEARER_ALLOWED_AUTH_PAP
+                    elif chosen_auth_method == 'chap':
+                        self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 3) # chap MM_BEARER_ALLOWED_AUTH_CHAP
+                    else:
+                       self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 0) # unknown MM_BEARER_ALLOWED_AUTH_UNKNOWN
+        except Exception as e:
+            pass
+
         changed_props = {}
         for prop in self.props:
             if self.props[prop].value != old_props[prop].value:
@@ -110,7 +133,6 @@ class MMModem3gppInterface(ServiceInterface):
             await ofono_operator_interface.call_register()
         except DBusError:
             return
-
 
     @method()
     async def Scan(self) -> 'aa{sv}':
@@ -223,12 +245,12 @@ class MMModem3gppInterface(ServiceInterface):
 
     def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval
-        self.set_props()
+        asyncio.create_task(self.set_props())
 
     def ofono_interface_changed(self, iface):
         def ch(name, varval):
             if iface in self.ofono_interface_props:
                 self.ofono_interface_props[iface][name] = varval
-            self.set_props()
+            asyncio.create_task(self.set_props())
 
         return ch
