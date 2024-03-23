@@ -27,13 +27,13 @@ class MMModemLocationInterface(ServiceInterface):
         }
 
         self.props = {
-            'Capabilities': Variant('u', 0), # hardcoded dummy value none MM_MODEM_LOCATION_SOURCE_NONE
+            'Capabilities': Variant('u', 1), # hardcoded dummy value 3gpp location area code and cell id MM_MODEM_LOCATION_SOURCE_3GPP_LAC_CI
             'SupportedAssistanceData': Variant('u', 0), # hardcoded dummy value none MM_MODEM_LOCATION_ASSISTANCE_DATA_TYPE_NONE
             'Enabled': Variant('u', 2), # hardcoded dummy value raw MM_MODEM_LOCATION_SOURCE_GPS_RAW
             'SignalsLocation': Variant('b', False),
             'SuplServer': Variant('s', ''),
             'AssistanceDataServers': Variant('as', []),
-            'GpsRefreshRate': Variant('u', 30)
+            'GpsRefreshRate': Variant('u', 0)
         }
 
     @method()
