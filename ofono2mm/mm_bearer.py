@@ -159,7 +159,7 @@ class MMBearerInterface(ServiceInterface):
         try:
             await self.set_props()
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to set props: {e}", self.verbose)
 
         # print("Do connect")
         ofono_ctx_interface = self.ofono_client["ofono_context"][self.ofono_ctx]['org.ofono.ConnectionContext']
@@ -201,7 +201,7 @@ class MMBearerInterface(ServiceInterface):
             await ofono_ctx_interface.call_set_property("Username", Variant('s', username))
             await ofono_ctx_interface.call_set_property("Password", Variant('s', password))
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to set ofono authentication: {e}", self.verbose)
 
     def ofono_context_changed(self, propname, value):
         ofono2mm_print(f"oFono context changed for prop name {propname} set to value {value}", self.verbose)

@@ -99,16 +99,16 @@ class MMModem3gppInterface(ServiceInterface):
                     auth_method = ctx[1].get('AuthenticationMethod', Variant('s', '')).value
 
                     self.props['InitialEpsBearerSettings'].value['apn'] = Variant('s', f'{apn}')
-                    if chosen_auth_method == 'none':
+                    if auth_method == 'none':
                         self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 1) # none MM_BEARER_ALLOWED_AUTH_NONE
-                    elif chosen_auth_method == 'pap':
+                    elif auth_method == 'pap':
                         self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 2) # pap MM_BEARER_ALLOWED_AUTH_PAP
-                    elif chosen_auth_method == 'chap':
+                    elif auth_method == 'chap':
                         self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 3) # chap MM_BEARER_ALLOWED_AUTH_CHAP
                     else:
                        self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 0) # unknown MM_BEARER_ALLOWED_AUTH_UNKNOWN
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to set eps bearer settings: {e}", self.verbose)
 
         changed_props = {}
         for prop in self.props:
@@ -126,13 +126,13 @@ class MMModem3gppInterface(ServiceInterface):
                 try:
                     await self.ofono_interfaces['org.ofono.NetworkRegistration'].call_register()
                 except DBusError:
-                    pass
+                    ofono2mm_print(f"Failed to register to operator_id {operator_id}", self.verbose)
             return
         try:
             ofono_operator_interface = self.ofono_client["ofono_operator"][f"{self.modem_name}/operator/{operator_id}"]['org.ofono.NetworkOperator']
             await ofono_operator_interface.call_register()
         except DBusError:
-            return
+            ofono2mm_print(f"Failed to register to operator_id {operator_id}", self.verbose)
 
     @method()
     async def Scan(self) -> 'aa{sv}':

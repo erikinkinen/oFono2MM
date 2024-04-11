@@ -158,15 +158,12 @@ class MMModemSimpleInterface(ServiceInterface):
     async def Connect(self, properties: 'a{sv}') -> 'o':
         ofono2mm_print(f"Connecting with properties {properties}", self.verbose)
 
-        try:
-            self.set_props()
-        except Exception as e:
-            pass
+        self.set_props()
 
         try:
             await self.network_manager_set_apn()
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to set Network Manager APN: {e}", self.verbose)
 
         for b in self.mm_modem.bearers:
             if self.mm_modem.bearers[b].props['Properties'].value['apn'] == properties['apn']:
@@ -199,12 +196,12 @@ class MMModemSimpleInterface(ServiceInterface):
                 try:
                     await self.mm_modem.bearers[b].doDisconnect()
                 except Exception as e:
-                    pass
+                    ofono2mm_print(f"Failed to disconnect bearer {path}: {e}", self.verbose)
         if path in self.mm_modem.bearers:
             try:
                 await self.mm_modem.bearers[path].doDisconnect()
             except Exception as e:
-                pass
+                ofono2mm_print(f"Failed to disconnect bearer {path}: {e}", self.verbose)
 
         ofono2mm_print("Saving context toggle state", self.verbose)
         self.save_context_mode('False')
@@ -235,7 +232,6 @@ class MMModemSimpleInterface(ServiceInterface):
         try:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             for ctx in contexts:
-                #print(ctx)
                 type = ctx[1].get('Type', Variant('s', '')).value
                 if type.lower() == "internet":
                     apn = ctx[1].get('AccessPointName', Variant('s', '')).value

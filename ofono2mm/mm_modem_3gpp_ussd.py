@@ -37,7 +37,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         try:
             await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_cancel()
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to cancel USSD: {e}", self.verbose)
 
     @dbus_property(access=PropertyAccess.READ)
     async def State(self) -> 'u':
@@ -57,6 +57,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
             self.ofono_interfaces['org.ofono.SupplementaryServices'].on_notification_received(self.save_notification_received)
             self.ofono_interfaces['org.ofono.SupplementaryServices'].on_request_received(self.save_request_received)
         except Exception as e:
+            ofono2mm_print(f"Failed to get state, marking as unknown: {e}", self.verbose)
             self.props['State'] = Variant('u', 0) # unknown MM_MODEM_3GPP_USSD_SESSION_STATE_UNKNOWN
 
         return self.props['State'].value

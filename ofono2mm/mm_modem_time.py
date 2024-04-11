@@ -61,6 +61,7 @@ class MMModemTimeInterface(ServiceInterface):
             else:
                 self.network_time = datetime.now().isoformat()
         else:
+            ofono2mm_print(f"oFono NetworkTime is unavailable, using system time", self.verbose)
             self.network_time = datetime.now().isoformat()
 
         return self.network_time

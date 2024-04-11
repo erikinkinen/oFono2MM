@@ -302,6 +302,7 @@ class MMModemInterface(ServiceInterface):
 
         global bearer_i
         if not 'org.ofono.ConnectionManager' in self.ofono_interfaces:
+            ofono2mm_print("oFono ConnectionManager is not available, skipping", self.verbose)
             return
 
         contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts();
@@ -717,6 +718,7 @@ class MMModemInterface(ServiceInterface):
         ofono2mm_print(f"Enable with state {enable}", self.verbose)
 
         if self.props['State'].value == -1:
+            ofono2mm_print("Modem is in an unknown state, skipping", self.verbose)
             return
 
         old_state = self.props['State'].value
@@ -727,7 +729,7 @@ class MMModemInterface(ServiceInterface):
         try:
             await self.ofono_modem.call_set_property('Online', Variant('b', enable))
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to enable with state {enable}: {e}", self.verbose)
 
         self.set_props()
 
@@ -743,12 +745,13 @@ class MMModemInterface(ServiceInterface):
         try:
             return await self.doCreateBearer(properties)
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to create bearer with properties {properties}: {e}", self.verbose)
 
     async def doCreateBearer(self, properties):
         global bearer_i
 
         if 'org.ofono.ConnectionManager' not in self.ofono_interfaces:
+            ofono2mm_print("oFono ConnectionManager is not available, skipping", self.verbose)
             return
 
         # print(f"docreatebearer {bearer_i}" )
@@ -776,10 +779,7 @@ class MMModemInterface(ServiceInterface):
                         chosen_apn = access_point_name
                         chosen_ctx_path = ctx[0]
 
-                        # print(chosen_ctx_path)
-
                 if chosen_ctx_path:
-                    # print("set apn")
                     chosen_ctx_interface = self.ofono_client["ofono_context"][chosen_ctx_path]['org.ofono.ConnectionContext']
                     await chosen_ctx_interface.call_set_property("Active", Variant('b', False))
                     await chosen_ctx_interface.call_set_property("AccessPointName", Variant('s', chosen_apn))

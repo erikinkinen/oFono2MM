@@ -67,6 +67,8 @@ class MMCallInterface(ServiceInterface):
             ofono_interface = self.ofono_client["ofono_modem"][self.voicecall]['org.ofono.VoiceCall']
             await ofono_interface.call_hangup()
         except Exception as e:
+            ofono2mm_print(f"Failed to hang up call: {e}", self.verbose)
+            ofono2mm_print(f"Calling hang up all instead", self.verbose)
             await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
 
         self.props['State'] = Variant('u', 7) # terminated MM_CALL_STATE_TERMINATED

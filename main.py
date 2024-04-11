@@ -45,7 +45,7 @@ class MMInterface(ServiceInterface):
         try:
             await self.find_ofono_modems()
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to scan for devices: {e}", self.verbose)
 
     async def check_ofono_presence(self):
         ofono2mm_print("Checking ofono presence", self.verbose)
@@ -84,6 +84,7 @@ class MMInterface(ServiceInterface):
         self.offline_modems = []
 
         if not self.ofono_manager_interface:
+            ofono2mm_print(f"oFono manager interface is empty, skipping", self.verbose)
             return
 
         self.ofono_modem_list = False
@@ -132,7 +133,7 @@ class MMInterface(ServiceInterface):
         try:
             self.loop.create_task(self.export_new_modem(path, mprops))
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to create task for modem {path}: {e}", self.verbose)
 
     async def export_new_modem(self, path, mprops):
         ofono2mm_print(f"Processing modem {path} with properties {mprops}", self.verbose)
@@ -219,14 +220,14 @@ class MMInterface(ServiceInterface):
             await asyncio.sleep(2)
 
     def ofono_modem_removed(self, path):
-        ofono2mm_print("oFono modem removed", self.verbose)
+        ofono2mm_print("oFono modem removed at path {path}", self.verbose)
 
         for mm_object in self.mm_modem_objects:
             try:
                 if mm_object.modem_name == path:
                     self.bus.unexport(mm_object)
             except Exception as e:
-                pass
+                ofono2mm_print(f"Failed unexport modem at path {path}: {e}", self.verbose)
 
     @method()
     def SetLogging(self, level: 's'):

@@ -42,6 +42,7 @@ class MMModemVoiceInterface(ServiceInterface):
             else:
                 self.props['EmergencyOnly'] = Variant('b', False)
         except Exception as e:
+            ofono2mm_print(f"Failed to check for emergency state, marking as false: {e}", self.verbose)
             self.props['EmergencyOnly'] = Variant('b', False)
 
         if 'org.ofono.VoiceCallManager' in self.ofono_interfaces:
@@ -90,7 +91,7 @@ class MMModemVoiceInterface(ServiceInterface):
             self.emit_properties_changed({'Calls': self.props['Calls'].value})
             self.CallDeleted(f'/org/freedesktop/ModemManager1/Call/{call_i}')
         except Exception as e:
-            pass
+            ofono2mm_print(f"Failed to remove call object {path}: {e}", self.verbose)
 
         if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
             self.props['EmergencyOnly'] = Variant('b', self.ofono_interface_props['org.ofono.SimManager']['FixedDialing'].value)
