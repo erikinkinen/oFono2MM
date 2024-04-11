@@ -3,6 +3,7 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
 from ofono2mm.logging import ofono2mm_print
+from ofono2mm.utils import save_setting, read_setting
 
 import NetworkManager
 import uuid
@@ -173,7 +174,7 @@ class MMModemSimpleInterface(ServiceInterface):
                 await self.mm_modem.bearers[b].doConnect()
 
                 ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
-                self.save_context_mode('True')
+                save_setting('data', 'True')
                 return b
 
         try:
@@ -183,7 +184,7 @@ class MMModemSimpleInterface(ServiceInterface):
             bearer = f'/org/freedesktop/ModemManager/Bearer/0'
 
         ofono2mm_print("Saving context toggle state on bearer creation", self.verbose)
-        self.save_context_mode('True')
+        save_setting('data', 'True')
 
         return bearer
 
@@ -204,7 +205,7 @@ class MMModemSimpleInterface(ServiceInterface):
                 ofono2mm_print(f"Failed to disconnect bearer {path}: {e}", self.verbose)
 
         ofono2mm_print("Saving context toggle state", self.verbose)
-        self.save_context_mode('False')
+        save_setting('data', 'False')
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
@@ -302,15 +303,6 @@ class MMModemSimpleInterface(ServiceInterface):
             return True
         else:
             return False
-
-    def save_context_mode(self, mode):
-        settings_path = os.path.join(self.settings_dir, 'toggleMode')
-
-        if not os.path.exists(self.settings_dir):
-            os.makedirs(self.settings_dir)
-
-        with open (settings_path, 'w') as settings_file:
-            settings_file.write(mode)
 
     def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval

@@ -10,7 +10,7 @@ from dbus_next import Variant
 import asyncio
 
 from ofono2mm import MMModemInterface, Ofono, DBus
-from ofono2mm.utils import async_locked
+from ofono2mm.utils import async_locked, save_setting, read_setting
 from ofono2mm.logging import ofono2mm_print
 
 import argparse
@@ -167,7 +167,8 @@ class MMInterface(ServiceInterface):
         except Exception as e:
             pass
 
-        if self.check_context_state():
+        data = read_setting('data').strip()
+        if data == 'True':
             ofono2mm_print(f"Activating context on startup", self.verbose)
 
             try:
@@ -194,20 +195,6 @@ class MMInterface(ServiceInterface):
                     ofono2mm_print(f"Failed to activate context: {e}", self.verbose)
 
             await asyncio.sleep(2)
-
-    def check_context_state(self):
-        settings_path = os.path.join(self.settings_dir, 'toggleMode')
-
-        if not os.path.exists(settings_path):
-            return False
-
-        with open (settings_path, 'r') as settings_file:
-            state = settings_file.readline().strip()
-
-        if state == 'False':
-            return False
-
-        return True
 
     async def simple_set_apn(self, mm_modem_simple):
         ofono2mm_print("Setting APN in Network Manager", self.verbose)

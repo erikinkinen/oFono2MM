@@ -1,4 +1,8 @@
 import asyncio
+import os
+
+settings_dir = '/var/lib/ofono2mm'
+settings_file = os.path.join(settings_dir, 'settings.conf')
 
 def async_retryable(times=0):
     """
@@ -41,3 +45,29 @@ def async_locked(func):
 
     func.__lock = asyncio.Lock()
     return wrapper
+
+def save_setting(key, value):
+    if not os.path.exists(settings_dir):
+        os.makedirs(settings_dir)
+
+    settings = parse_settings()
+
+    settings[key] = value
+
+    with open(settings_file, 'w') as file:
+        for k, v in settings.items():
+            file.write(f"{k}: {v}\n")
+
+def read_setting(key):
+    settings = parse_settings()
+    return str(settings.get(key, False))
+
+def parse_settings():
+    settings = {}
+    if os.path.exists(settings_file):
+        with open(settings_file, 'r') as file:
+            for line in file:
+                if ':' in line:
+                    k, v = line.strip().split(':', 1)
+                    settings[k] = v
+    return settings
