@@ -3,7 +3,7 @@ from dbus_next.service import (ServiceInterface,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError, BusType
 
-from ofono2mm.utils import async_retryable
+from ofono2mm.utils import async_retryable, save_setting, read_setting
 from ofono2mm.logging import ofono2mm_print
 
 import asyncio
@@ -139,6 +139,9 @@ class MMBearerInterface(ServiceInterface):
 
             if ofono_props.get('RoamingAllowed', Variant('b', True).value) != "":
                 roaming_allowed = ofono_props.get('RoamingAllowed', Variant('b', True).value).value
+
+                ofono2mm_print("Saving roaming toggle state", self.verbose)
+                save_setting('roaming', str(roaming_allowed))
 
                 if roaming_allowed == True:
                     self.props['Properties'].value['roaming-allowance'] = Variant('u', 2) # roaming partner network MM_BEARER_ROAMING_ALLOWANCE_PARTNER

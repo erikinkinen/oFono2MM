@@ -167,8 +167,7 @@ class MMInterface(ServiceInterface):
         except Exception as e:
             pass
 
-        data = read_setting('data').strip()
-        if data == 'True':
+        if read_setting('data').strip() == 'True':
             ofono2mm_print(f"Activating context on startup", self.verbose)
 
             try:
