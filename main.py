@@ -5,6 +5,7 @@ from dbus_next.service import (ServiceInterface,
                                method, dbus_property)
 from dbus_next.constants import PropertyAccess
 from dbus_next import DBusError, BusType
+from dbus_next import Variant
 
 import asyncio
 
@@ -13,6 +14,7 @@ from ofono2mm.utils import async_locked
 from ofono2mm.logging import ofono2mm_print
 
 import argparse
+import os
 
 has_bus = False
 sim_i = 0
@@ -29,6 +31,7 @@ class MMInterface(ServiceInterface):
         self.mm_modem_interfaces = []
         self.mm_modem_objects = []
         self.offline_modems = []
+        self.settings_dir = "/var/lib/ofono2mm"
         self.loop.create_task(self.check_ofono_presence())
 
     @dbus_property(access=PropertyAccess.READ)
@@ -162,6 +165,48 @@ class MMInterface(ServiceInterface):
             self.loop.create_task(self.simple_set_apn(mm_modem_simple))
         except Exception as e:
             pass
+
+        if self.check_context_state():
+            ofono2mm_print(f"Activating context on startup", self.verbose)
+
+            try:
+                self.loop.create_task(self.startup_activate_context(mm_modem_simple, mm_modem_interface))
+            except Exception as e:
+                ofono2mm_print(f"Failed to activate context: {e}", self.verbose)
+
+    async def startup_activate_context(self, mm_modem_simple, mm_modem):
+        ofono2mm_print("Activating context on startup", self.verbose)
+
+        while True:
+            strength = mm_modem_simple.check_signal_strength()
+
+            if strength == 0:
+                ofono2mm_print("Strength is not available, skipping", self.verbose)
+            elif strength > 0:
+                ofono2mm_print(f"Signal strength is {strength}, activating context now", self.verbose)
+
+                try:
+                    ret = await mm_modem.activate_internet_context()
+                    if ret == True:
+                        return
+                except Exception as e:
+                    ofono2mm_print(f"Failed to activate context: {e}", self.verbose)
+
+            await asyncio.sleep(2)
+
+    def check_context_state(self):
+        settings_path = os.path.join(self.settings_dir, 'toggleMode')
+
+        if not os.path.exists(settings_path):
+            return False
+
+        with open (settings_path, 'r') as settings_file:
+            state = settings_file.readline().strip()
+
+        if state == 'False':
+            return False
+
+        return True
 
     async def simple_set_apn(self, mm_modem_simple):
         ofono2mm_print("Setting APN in Network Manager", self.verbose)

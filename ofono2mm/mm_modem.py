@@ -1108,6 +1108,20 @@ class MMModemInterface(ServiceInterface):
     def SupportedIpFamilies(self) -> 'u':
         return self.props['SupportedIpFamilies'].value
 
+    async def activate_internet_context(self):
+        try:
+            contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
+            for ctx in contexts:
+                type = ctx[1].get('Type', Variant('s', '')).value
+                if type.lower() == "internet":
+                    ofono_ctx_interface = self.ofono_client["ofono_context"][ctx[0]]["org.ofono.ConnectionContext"]
+                    apn = ctx[1].get('AccessPointName', Variant('s', '')).value
+                    await ofono_ctx_interface.call_set_property("Active", Variant('b', True))
+                    return True
+        except Exception as e:
+            ofono2mm_print(f"Failed to activate internet context: {e}", self.verbose)
+            return False
+
     def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval
         if name == "Interfaces":

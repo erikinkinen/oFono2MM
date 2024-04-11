@@ -7,6 +7,7 @@ from ofono2mm.logging import ofono2mm_print
 import NetworkManager
 import uuid
 import time
+import os
 import dbus.mainloop.glib
 
 class MMModemSimpleInterface(ServiceInterface):
@@ -18,6 +19,7 @@ class MMModemSimpleInterface(ServiceInterface):
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.verbose = verbose
+        self.settings_dir = "/var/lib/ofono2mm"
         self.props = {
              'state': Variant('u', 7), # on runtime enabled MM_MODEM_STATE_ENABLED
              'signal-quality': Variant('(ub)', [0, True]),
@@ -135,12 +137,29 @@ class MMModemSimpleInterface(ServiceInterface):
             if self.props[prop].value != old_props[prop].value:
                 self.emit_properties_changed({prop: self.props[prop].value})
 
+    def check_signal_strength(self):
+        ofono2mm_print(f"Checking network registration", self.verbose)
+
+        try:
+            if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
+                if 'Strength' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
+                    strength = self.ofono_interface_props['org.ofono.NetworkRegistration']['Strength'].value
+                    ofono2mm_print(f"Signal strength is available: {strength}", self.verbose)
+                    return strength
+                else:
+                    return 0
+            else:
+                return 0
+        except Exception as e:
+            ofono2mm_print(f"Failed to get signal strength: {e}", self.verbose)
+            return 0
+
     @method()
     async def Connect(self, properties: 'a{sv}') -> 'o':
         ofono2mm_print(f"Connecting with properties {properties}", self.verbose)
 
         try:
-            await self.props()
+            self.set_props()
         except Exception as e:
             pass
 
@@ -155,6 +174,9 @@ class MMModemSimpleInterface(ServiceInterface):
                                                                 properties['password'].value if 'password' in properties else '')
                 self.mm_modem.bearers[b].props['Properties'] = Variant('a{sv}', properties)
                 await self.mm_modem.bearers[b].doConnect()
+
+                ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
+                self.save_context_mode('True')
                 return b
 
         try:
@@ -162,6 +184,9 @@ class MMModemSimpleInterface(ServiceInterface):
             await self.mm_modem.bearers[bearer].doConnect()
         except Exception as e:
             bearer = f'/org/freedesktop/ModemManager/Bearer/0'
+
+        ofono2mm_print("Saving context toggle state on bearer creation", self.verbose)
+        self.save_context_mode('True')
 
         return bearer
 
@@ -180,6 +205,9 @@ class MMModemSimpleInterface(ServiceInterface):
                 await self.mm_modem.bearers[path].doDisconnect()
             except Exception as e:
                 pass
+
+        ofono2mm_print("Saving context toggle state", self.verbose)
+        self.save_context_mode('False')
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
@@ -278,6 +306,15 @@ class MMModemSimpleInterface(ServiceInterface):
             return True
         else:
             return False
+
+    def save_context_mode(self, mode):
+        settings_path = os.path.join(self.settings_dir, 'toggleMode')
+
+        if not os.path.exists(self.settings_dir):
+            os.makedirs(self.settings_dir)
+
+        with open (settings_path, 'w') as settings_file:
+            settings_file.write(mode)
 
     def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval
