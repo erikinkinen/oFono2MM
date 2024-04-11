@@ -218,17 +218,14 @@ class MMInterface(ServiceInterface):
     @method()
     def SetLogging(self, level: 's'):
         ofono2mm_print(f"Set logging with level {level}", self.verbose)
-        pass
 
     @method()
     def ReportKernelEvent(self, properties: 'a{sv}'):
         ofono2mm_print(f"Report kernel events with properties {properties}", self.verbose)
-        pass
 
     @method()
     def InhibitDevice(self, uid: 's', inhibit: 'b'):
         ofono2mm_print(f"Inhibit device with uid {uid} set to {inhibit}", self.verbose)
-        pass
 
 def get_version():
     return "1.22.0"
