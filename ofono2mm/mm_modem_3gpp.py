@@ -121,6 +121,12 @@ class MMModem3gppInterface(ServiceInterface):
     async def Register(self, operator_id: 's'):
         ofono2mm_print(f"Register with operator id {operator_id}", self.verbose)
 
+        if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
+            if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unknown":
+                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Device not yet enabled')
+        else:
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Device not yet enabled')
+
         if operator_id == "":
             if 'org.ofono.NetworkRegistration' in self.ofono_interfaces:
                 try:
