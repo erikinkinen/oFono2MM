@@ -1,8 +1,10 @@
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant
+from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
+
+import asyncio
 
 class MMModem3gppUssdInterface(ServiceInterface):
     def __init__(self, ofono_interfaces, verbose=False):
@@ -10,6 +12,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         ofono2mm_print("Initializing 3GPP USSD interface", verbose)
         self.ofono_interfaces = ofono_interfaces
         self.verbose = verbose
+        self.network_notification_event = asyncio.Event()
         self.props = {
             'State': Variant('u', 0), # on runtime unknown MM_MODEM_3GPP_USSD_SESSION_STATE_UNKNOWN
             'NetworkNotification': Variant('s', ''),
@@ -18,17 +21,51 @@ class MMModem3gppUssdInterface(ServiceInterface):
 
     @method()
     async def Initiate(self, command: 's') -> 's':
-        ofono2mm_print(f"Initiaate USSD with command {command}", self.verbose)
+        ofono2mm_print(f"Initiating USSD with command {command}", self.verbose)
 
-        result = await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_initiate(command)
-        return result[1].value
+        if self.props['State'].value in (2, 3): # 2: active, 3: user-response
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot initiate USSD: a session is already active')
+
+        ret = await self.run_initiate(command)
+        return ret
+
+    async def run_initiate(self, command):
+        self.initiate_task = asyncio.create_task(
+            self.ofono_interfaces['org.ofono.SupplementaryServices'].call_initiate(command)
+        )
+        try:
+            await self.network_notification_event.wait() # Wait for the network notification to change
+            self.initiate_task.cancel() # Cancel the task when the event is triggered
+            try:
+                await self.initiate_task
+            except asyncio.CancelledError:
+                pass
+
+            return self.props['NetworkNotification'].value
+        except Exception as e:
+            ofono2mm_print(f"Failed to initiate USSD: {e}", self.verbose)
 
     @method()
     async def Respond(self, response: 's') -> 's':
         ofono2mm_print(f"Respond to 3GPP with command {response}", self.verbose)
 
-        result = await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_respond(response)
-        return result
+        if self.props['State'].value in (1, 2): # 1: idle, 2: active
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot respond USSD: no active session')
+
+        # for some reason ofono refuses to respond for 20-30 seconds after it has been initiated
+        retries = 10
+        for attempt in range(retries):
+            try:
+                result = await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_respond(response)
+                return result
+            except Exception as e:
+                ofono2mm_print(f"Attempt {attempt + 1}: Failed to respond: {e}", self.verbose)
+                if str(e) == "Operation already in progress" and attempt < retries - 1:
+                   # there must be a better way...
+                   await asyncio.sleep(5)
+                else:
+                    return ''
+        return ''
 
     @method()
     async def Cancel(self):
@@ -36,6 +73,9 @@ class MMModem3gppUssdInterface(ServiceInterface):
 
         try:
             await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_cancel()
+        except DBusError as e:
+            if "Operation is not active or in progress" in str(e):
+                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot respond USSD: no active session')
         except Exception as e:
             ofono2mm_print(f"Failed to cancel USSD: {e}", self.verbose)
 
@@ -73,6 +113,8 @@ class MMModem3gppUssdInterface(ServiceInterface):
     def save_request_received(self, message):
         ofono2mm_print(f"Save request with message {message}", self.verbose)
         self.props['NetworkNotification'] = Variant('s', message)
+        self.network_notification_event.set() # Signal that the notification has been received
+        self.network_notification_event.clear() # Reset the event for the next notification
 
     @dbus_property(access=PropertyAccess.READ)
     async def NetworkRequest(self) -> 's':
