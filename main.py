@@ -90,13 +90,21 @@ class MMInterface(ServiceInterface):
         self.ofono_modem_list = False
         while not self.ofono_modem_list:
             try:
+                modems = await self.ofono_manager_interface.call_get_modems()
+
+                for modem in modems:
+                    ofono2mm_print(f"Modems available in oFono: {modem[0]}", self.verbose)
+
                 self.ofono_modem_list = [
                     x
-                    for x in await self.ofono_manager_interface.call_get_modems()
+                    for x in modems
                     if x[0].startswith("/ril_") or x[0].startswith("/phonesim") # FIXME
                 ]
-            except DBusError:
-                pass
+
+                for modem in self.ofono_modem_list:
+                    ofono2mm_print(f"Selected modem: {modem[0]}", self.verbose)
+            except DBusError as e:
+                ofono2mm_print(f"Failed to get the current modem: {e}", self.verbose)
 
         self.i = 0
         sim_i = len(self.ofono_modem_list)
@@ -121,6 +129,8 @@ class MMInterface(ServiceInterface):
             has_bus = True
 
     def dbus_name_owner_changed(self, name, old_owner, new_owner):
+        ofono2mm_print(f"oFono name owner changed, name: {name}, old owner: {old_owner}, new owner: {new_owner}", self.verbose)
+
         if name == "org.ofono":
             if new_owner == "":
                 self.ofono_removed()
