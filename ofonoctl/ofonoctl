@@ -192,6 +192,7 @@ def action_wan(connect=False, resolv=False):
     for path, properties in contexts:
         settings4 = properties['Settings']
         settings6 = properties['IPv6.Settings']
+        dns_servers = []
         if "Method" in settings4:
             s = settings4
 
@@ -206,16 +207,22 @@ def action_wan(connect=False, resolv=False):
             if len(address) > 0:
                 address += "/" + str(ipaddress.IPv4Network('0.0.0.0/{}'.format(s["Netmask"])).prefixlen)
             result.append([s["Interface"], "ipv4", properties["AccessPointName"], s["Method"], address, gateway, dns])
+            dns4_servers = s["DomainNameServers"]
 
             if connect and s["Method"] == "static":
                 cmd = ['ip', 'addr', 'add', address, 'dev', s["Interface"]]
                 subprocess.check_output(cmd)
-                cmd = ['ip', 'route', 'add', 'default', 'via', gateway, 'dev', s["Interface"]]
+                cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
                 subprocess.check_output(cmd)
-            if resolv and s["Method"] == "static":
-                update_resolvconf(s["DomainNameServers"])
+                # ensure that we route traffic to WWAN dns servers over the WWAN interface
+                for dns4_server in dns4_servers:
+                    cmd = ['ip', 'route', 'replace', dns4_server + '/32', 'via', gateway, 'dev', s["Interface"]]
+                    subprocess.check_output(cmd)
 
-        if "Method" in settings6:
+            if s["Method"] == "static":
+                dns_servers += dns4_servers
+
+        if "Address" in settings6:
             s = settings6
 
             if connect and not has_flushed:
@@ -223,10 +230,26 @@ def action_wan(connect=False, resolv=False):
                 subprocess.check_output(cmd)
                 has_flushed = True
 
-            address = s["Address"] if s["Method"] == "static" else ""
-            gateway = s["Gateway"] if s["Method"] == "static" else ""
-            dns = ", ".join(s["DomainNameServers"]) if s["Method"] == "static" else ""
-            result.append([s["Interface"], "ipv6", properties["AccessPointName"], s["Method"], address, gateway, dns])
+            address = s["Address"]
+            gateway = s["Gateway"]
+            dns = ", ".join(s["DomainNameServers"])
+            result.append([s["Interface"], "ipv6", properties["AccessPointName"], "", address, gateway, dns])
+            dns6_servers = s["DomainNameServers"]
+
+            if connect:
+                cmd = ['ip', 'addr', 'add', address, 'dev', s["Interface"]]
+                subprocess.check_output(cmd)
+                cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
+                subprocess.check_output(cmd)
+                # ensure that we route traffic to WWAN dns servers over the WWAN interface
+                for dns6_server in dns6_servers:
+                    cmd = ['ip', 'route', 'replace', dns6_server + '/128', 'via', gateway, 'dev', s["Interface"]]
+                    subprocess.check_output(cmd)
+
+            dns_servers += dns6_servers
+
+        if resolv:
+            update_resolvconf(dns_servers)
 
     print(tabulate.tabulate(result, headers=["Interface", "Protocol", "APN", "Method", "Address", "Gateway", "DNS"]))
 
@@ -259,7 +282,6 @@ def action_sms(destination, message=None):
     mm = dbus.Interface(bus.get_object('org.ofono', modem), 'org.ofono.MessageManager')
     mm.SendMessage(destination, message)
     print("Sent")
-
 
 def action_sms_get():
     init()
