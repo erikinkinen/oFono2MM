@@ -86,7 +86,15 @@ def action_list():
                 if 'ServiceProviderName' in properties:
                     sim = properties['ServiceProviderName']
                 else:
-                    sim = 'Unknown'
+                    try:
+                        network_registration = dbus.Interface(bus.get_object('org.ofono', path), 'org.ofono.NetworkRegistration')
+                        network_registration_props = network_registration.GetProperties()
+                        if 'Name' in network_registration_props:
+                            sim = network_registration_props['Name']
+                        else:
+                            sim = 'Unknown'
+                    except Exception:
+                        sim = 'Unknown'
             else:
                 sim = "No SIM"
         except dbus.exceptions.DBusException:
