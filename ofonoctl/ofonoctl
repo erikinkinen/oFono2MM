@@ -198,8 +198,12 @@ def action_wan(connect=False, resolv=False):
 
             if connect and not has_flushed:
                 cmd = ['ip', 'addr', 'flush', 'dev', s['Interface']]
-                subprocess.check_output(cmd)
-                has_flushed = True
+                try:
+                    subprocess.check_output(cmd)
+                    has_flushed = True
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to flush: {e}")
+                    exit(1)
 
             address = s["Address"] if s["Method"] == "static" else ""
             gateway = s["Gateway"] if s["Method"] == "static" else ""
@@ -211,13 +215,26 @@ def action_wan(connect=False, resolv=False):
 
             if connect and s["Method"] == "static":
                 cmd = ['ip', 'addr', 'add', address, 'dev', s["Interface"]]
-                subprocess.check_output(cmd)
+                try:
+                    subprocess.check_output(cmd)
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to set the ip address {address}: {e}")
+                    exit(1)
+
                 cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
-                subprocess.check_output(cmd)
+                try:
+                    subprocess.check_output(cmd)
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to set the default gateway {gateway}: {e}")
+
                 # ensure that we route traffic to WWAN dns servers over the WWAN interface
                 for dns4_server in dns4_servers:
                     cmd = ['ip', 'route', 'replace', dns4_server + '/32', 'via', gateway, 'dev', s["Interface"]]
-                    subprocess.check_output(cmd)
+                    try:
+                        subprocess.check_output(cmd)
+                    except subprocess.CalledProcessError as e:
+                        print(f"Failed to set the default dns {dns4_server} for gateway {gateway}: {e}")
+                        exit(1)
 
             if s["Method"] == "static":
                 dns_servers += dns4_servers
@@ -227,8 +244,12 @@ def action_wan(connect=False, resolv=False):
 
             if connect and not has_flushed:
                 cmd = ['ip', 'addr', 'flush', 'dev', s['Interface']]
-                subprocess.check_output(cmd)
-                has_flushed = True
+                try:
+                    subprocess.check_output(cmd)
+                    has_flushed = True
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to flush: {e}")
+                    exit(1)
 
             address = s["Address"]
             gateway = s["Gateway"]
@@ -238,13 +259,27 @@ def action_wan(connect=False, resolv=False):
 
             if connect:
                 cmd = ['ip', 'addr', 'add', address, 'dev', s["Interface"]]
-                subprocess.check_output(cmd)
+                try:
+                    subprocess.check_output(cmd)
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to set the ip address {address}: {e}")
+                    exit(1)
+
                 cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
-                subprocess.check_output(cmd)
+                try:
+                    subprocess.check_output(cmd)
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to set the default gateway {gateway}: {e}")
+                    exit(1)
+
                 # ensure that we route traffic to WWAN dns servers over the WWAN interface
                 for dns6_server in dns6_servers:
                     cmd = ['ip', 'route', 'replace', dns6_server + '/128', 'via', gateway, 'dev', s["Interface"]]
-                    subprocess.check_output(cmd)
+                    try:
+                        subprocess.check_output(cmd)
+                    except subprocess.CalledProcessError as e:
+                        print(f"Failed to set the default dns {dns6_server} for gateway {gateway}: {e}")
+                        exit(1)
 
             dns_servers += dns6_servers
 
