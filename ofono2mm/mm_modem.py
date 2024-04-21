@@ -572,6 +572,9 @@ class MMModemInterface(ServiceInterface):
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "lte":
                     current_tech |= 1 << 14 # network is lte MM_MODEM_ACCESS_TECHNOLOGY_LTE
                     self.mm_cell_type = 5 # cell type is lte MM_CELL_TYPE_LTE
+                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspap":
+                    current_tech |= 1 << 9 # network is hspa plus MM_MODEM_ACCESS_TECHNOLOGY_HSPA_PLUS
+                    self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspa":
                     current_tech |= 1 << 8 # network is hspa MM_MODEM_ACCESS_TECHNOLOGY_HSPA
                     self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
@@ -585,10 +588,10 @@ class MMModemInterface(ServiceInterface):
                     current_tech |= 1 << 5 # network is umts MM_MODEM_ACCESS_TECHNOLOGY_UMTS
                     self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "edge":
-                    current_tech |= 1 << 4 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
+                    current_tech |= 1 << 4 # network is edge MM_MODEM_ACCESS_TECHNOLOGY_EDGE
                     self.mm_cell_type = 2 # cell type is gsm MM_CELL_TYPE_GSM
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gprs":
-                    current_tech |= 1 << 3 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
+                    current_tech |= 1 << 3 # network is gprs MM_MODEM_ACCESS_TECHNOLOGY_GPRS
                     self.mm_cell_type = 2 # cell type is gsm MM_CELL_TYPE_GSM
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gsm":
                     current_tech |= 1 << 1 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
