@@ -94,6 +94,8 @@ class MMModemSimpleInterface(ServiceInterface):
                     current_tech |= 1 << 15 # network is 5g MM_MODEM_ACCESS_TECHNOLOGY_5GNR
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "lte":
                     current_tech |= 1 << 14 # network is lte MM_MODEM_ACCESS_TECHNOLOGY_LTE
+                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspap":
+                    current_tech |= 1 << 9 # network is hspa plus MM_MODEM_ACCESS_TECHNOLOGY_HSPA_PLUS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspa":
                     current_tech |= 1 << 8 # network is hspa MM_MODEM_ACCESS_TECHNOLOGY_HSPA
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hsupa":
@@ -103,9 +105,9 @@ class MMModemSimpleInterface(ServiceInterface):
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "umts":
                     current_tech |= 1 << 5 # network is umts MM_MODEM_ACCESS_TECHNOLOGY_UMTS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "edge":
-                    current_tech |= 1 << 4 # network is edge MM_MODEM_ACCESS_TECHNOLOGY_GSM
+                    current_tech |= 1 << 4 # network is edge MM_MODEM_ACCESS_TECHNOLOGY_EDGE
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gprs":
-                    current_tech |= 1 << 3 # network is gprs MM_MODEM_ACCESS_TECHNOLOGY_GSM
+                    current_tech |= 1 << 3 # network is gprs MM_MODEM_ACCESS_TECHNOLOGY_GPRS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gsm":
                     current_tech |= 1 << 1 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
 
