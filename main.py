@@ -264,7 +264,10 @@ async def main():
         custom_help(parser)
         return
 
-    verbose = args.verbose
+    if os.environ.get('MODEM_DEBUG', 'false').lower() == 'true':
+        verbose = True
+    else:
+        verbose = args.verbose
 
     bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
     loop = asyncio.get_running_loop()
