@@ -26,6 +26,7 @@ class MMInterface(ServiceInterface):
         self.loop = loop
         self.bus = bus
         self.verbose = verbose
+        self.i = 0
         self.ofono_client = Ofono(bus)
         self.dbus_client = DBus(bus)
         self.mm_modem_interfaces = []
