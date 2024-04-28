@@ -91,6 +91,10 @@ class MMInterface(ServiceInterface):
         self.ofono_modem_list = False
         while not self.ofono_modem_list:
             try:
+                if self.ofono_manager_interface is None:
+                    ofono2mm_print(f"oFono manager interface is not initialized properly. skipping", self.verbose)
+                    return
+
                 modems = await self.ofono_manager_interface.call_get_modems()
 
                 for modem in modems:
@@ -111,16 +115,20 @@ class MMInterface(ServiceInterface):
         sim_i = len(self.ofono_modem_list)
 
         for modem in self.ofono_modem_list:
-            self.ofono_sim_manager = self.ofono_client["ofono_modem"][modem[0]]['org.ofono.SimManager']
-            sim_manager_props = await self.ofono_sim_manager.call_get_properties()
-            sim_present = sim_manager_props['Present'].value
+            try:
+                self.ofono_sim_manager = self.ofono_client["ofono_modem"][modem[0]]['org.ofono.SimManager']
+                sim_manager_props = await self.ofono_sim_manager.call_get_properties()
+                sim_present = sim_manager_props['Present'].value
 
-            ofono2mm_print(f"modem is {modem[0]}, online: {modem[1]['Online'].value}, number of sims: {sim_i} sim is present: {sim_present}", self.verbose)
+                ofono2mm_print(f"modem is {modem[0]}, online: {modem[1]['Online'].value}, number of sims: {sim_i} sim is present: {sim_present}", self.verbose)
 
-            if sim_present == False and sim_i > 1:
-                self.offline_modems.append(modem)
-            else:
-                await self.export_new_modem(modem[0], modem[1])
+                if sim_present == False and sim_i > 1:
+                    self.offline_modems.append(modem)
+                else:
+                    await self.export_new_modem(modem[0], modem[1])
+            except DBusError as e:
+                print(f"Error interacting with modem {modem[0]}: {e}")
+                continue
 
         for modem_info in self.offline_modems:
             await self.export_new_modem(*modem_info)
