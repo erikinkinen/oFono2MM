@@ -38,7 +38,7 @@ class MMModemLocationInterface(ServiceInterface):
 
     @method()
     def Setup(self, sources: 'u', signal_location: 'b') -> None:
-        ofono2mm_print(f"Setup location with source flag {source} and signal location {signal_location}", self.verbose)
+        ofono2mm_print(f"Setup location with source flag {sources} and signal location {signal_location}", self.verbose)
         self.props['Enabled'] = Variant('u', sources)
         self.props['SignalsLocation'] = Variant('b', signal_location)
 
