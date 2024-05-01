@@ -24,8 +24,8 @@ class MMModemSarInterface(ServiceInterface):
 
     @method()
     def Enable(self, enable: 'b'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup SAR: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot setup SAR: operation not supported')
 
     @method()
     def SetPowerLevel(self, level: 'u'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set SAR power level: SAR is disabled')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot set SAR power level: SAR is disabled')

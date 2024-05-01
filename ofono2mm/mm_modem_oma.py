@@ -18,24 +18,23 @@ class MMModemOmaInterface(ServiceInterface):
 
     @method()
     def Setup(self, features: 'u'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup OMA: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot setup OMA: operation not supported')
 
     @method()
     def StartClientInitiatedSession(self, session_type: 'u'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot start client-initiated OMA session: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot start client-initiated OMA session: operation not supported')
 
     @method()
     def AcceptNetworkInitiatedSession(self, session_id: 'u', accept: 'b'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot accept network-initiated OMA session: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot accept network-initiated OMA session: operation not supported')
 
     @method()
     def CancelSession(self):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot cancel OMA session: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot cancel OMA session: operation not supported')
 
     @signal()
     def SessionStateChanged(self, old_session_state: 'i', new_session_state: 'i', session_state_failed_reason: 'u'):
         ofono2mm_print(f"Signal: Session state changed with old sttate {old_session_state} and new state {new_session_state}. failed reason (if any): {session_state_failed_reason}", self.verbose)
-        pass
 
     @dbus_property(access=PropertyAccess.READ)
     def Features(self) -> 'u':

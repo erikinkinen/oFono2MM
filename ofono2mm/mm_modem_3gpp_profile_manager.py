@@ -1,11 +1,9 @@
 from dbus_next.service import (ServiceInterface,
                                method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
-from dbus_next import Variant, DBusError
+from dbus_next import Variant
 
 from ofono2mm.logging import ofono2mm_print
-
-import asyncio
 
 class MMModem3gppProfileManagerInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, verbose=False):
@@ -65,14 +63,13 @@ class MMModem3gppProfileManagerInterface(ServiceInterface):
     async def Delete(self, properties: 'a{sv}'):
         ofono2mm_print(f"Deleting profile with properties {properties}", self.verbose)
 
-        for key, value in properties.items():
+        for key in properties.items():
             if key in self.props:
                 del self.props[key]
 
     @signal()
     def Updated(self):
-        ofono2mm_print(f"Signal: Updated emitted", self.verbose)
-        pass
+        ofono2mm_print("Signal: Updated emitted", self.verbose)
 
     @dbus_property(access=PropertyAccess.READ)
     def IndexField(self) -> 's':

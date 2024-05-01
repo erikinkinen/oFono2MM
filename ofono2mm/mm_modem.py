@@ -21,9 +21,9 @@ from ofono2mm.mm_modem_voice import MMModemVoiceInterface
 from ofono2mm.logging import ofono2mm_print
 
 import asyncio
-import glob
-import time
-import re
+from glob import glob
+from time import time, sleep
+from re import split
 
 bearer_i = 0
 
@@ -933,9 +933,9 @@ class MMModemInterface(ServiceInterface):
         if cmd[:2] != "AT":
             return ''
 
-        smd_devices = glob.glob('/dev/smd*')
+        smd_devices = glob('/dev/smd*')
 
-        smd_devices.sort(key=lambda s: [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)])
+        smd_devices.sort(key=lambda s: [int(text) if text.isdigit() else text.lower() for text in split('([0-9]+)', s)])
         if smd_devices:
             device_path = smd_devices[0]
         else:
@@ -947,12 +947,12 @@ class MMModemInterface(ServiceInterface):
             device_file.write(data_to_write)
 
         with open(device_path, 'r') as device_file:
-            start_time = time.time()
+            start_time = time()
             received_data = ""
             while True:
                 line = device_file.readline()
                 if line:
-                    if time.time() - start_time > 5:
+                    if time() - start_time > 5:
                         return ''
 
                     received_data += line
@@ -961,7 +961,7 @@ class MMModemInterface(ServiceInterface):
                     if "ERROR" in received_data:
                         break
 
-                time.sleep(0.1)
+                sleep(0.1)
 
         data = received_data.strip()
         data_print = data.replace('\n', ' ')

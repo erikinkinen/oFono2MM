@@ -1,14 +1,15 @@
-from dbus_next.service import ServiceInterface, method, dbus_property, signal
-from dbus_next.constants import PropertyAccess
-from dbus_next import Variant, DBusError
-
 from datetime import datetime
 
 import gi
-gi.require_version('Geoclue', '2.0')
 from gi.repository import Geoclue
 
+from dbus_next.service import ServiceInterface, method, dbus_property
+from dbus_next.constants import PropertyAccess
+from dbus_next import Variant, DBusError
+
 from ofono2mm.logging import ofono2mm_print
+
+gi.require_version('Geoclue', '2.0')
 
 class MMModemLocationInterface(ServiceInterface):
     def __init__(self, verbose=False):
@@ -68,11 +69,11 @@ class MMModemLocationInterface(ServiceInterface):
 
     @method()
     def SetSuplServer(self, supl: 's') -> None:
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set SUPL server: A-GPS not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot set SUPL server: A-GPS not supported')
 
     @method()
     def InjectAssistanceData(self, data: 'ay') -> None:
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot inject assistance data: ununsupported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot inject assistance data: ununsupported')
 
     @method()
     def SetGpsRefreshRate(self, rate: 'u') -> None:

@@ -1,10 +1,10 @@
-import inspect
+from inspect import currentframe
 
 def ofono2mm_print(message, verbose):
     if not verbose:
         return
 
-    frame = inspect.currentframe()
+    frame = currentframe()
     caller_frame = frame.f_back
     if 'self' in caller_frame.f_locals:
         cls_name = caller_frame.f_locals['self'].__class__.__name__

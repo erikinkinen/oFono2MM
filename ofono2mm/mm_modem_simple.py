@@ -1,15 +1,16 @@
-from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
-from dbus_next.constants import PropertyAccess
+from time import time
+from uuid import uuid4
+
+import NetworkManager
+
+from dbus_next.service import ServiceInterface, method
 from dbus_next import Variant
 
 from ofono2mm.logging import ofono2mm_print
-from ofono2mm.utils import save_setting, read_setting
+from ofono2mm.utils import save_setting
 
-import NetworkManager
-import uuid
-import time
-import os
-import dbus.mainloop.glib
+from dbus import SystemBus, Interface
+from dbus.mainloop.glib import DBusGMainLoop
 
 class MMModemSimpleInterface(ServiceInterface):
     def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
@@ -20,7 +21,6 @@ class MMModemSimpleInterface(ServiceInterface):
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.verbose = verbose
-        self.settings_dir = "/var/lib/ofono2mm"
         self.props = {
              'state': Variant('u', 7), # on runtime enabled MM_MODEM_STATE_ENABLED
              'signal-quality': Variant('(ub)', [0, True]),
@@ -141,7 +141,7 @@ class MMModemSimpleInterface(ServiceInterface):
                 self.emit_properties_changed({prop: self.props[prop].value})
 
     def check_signal_strength(self):
-        ofono2mm_print(f"Checking network registration", self.verbose)
+        ofono2mm_print("Checking network registration", self.verbose)
 
         try:
             if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
@@ -182,8 +182,8 @@ class MMModemSimpleInterface(ServiceInterface):
         try:
             bearer = await self.mm_modem.doCreateBearer(properties)
             await self.mm_modem.bearers[bearer].doConnect()
-        except Exception as e:
-            bearer = f'/org/freedesktop/ModemManager/Bearer/0'
+        except Exception:
+            bearer = '/org/freedesktop/ModemManager/Bearer/0'
 
         ofono2mm_print("Saving context toggle state on bearer creation", self.verbose)
         save_setting('data', 'True')
@@ -216,37 +216,37 @@ class MMModemSimpleInterface(ServiceInterface):
         return self.props
 
     async def network_manager_set_apn(self):
-        ofono2mm_print(f"Generating Network Manager connection", self.verbose)
+        ofono2mm_print("Generating Network Manager connection", self.verbose)
 
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        DBusGMainLoop(set_as_default=True)
 
-        current_timestamp = int(time.time())
+        current_timestamp = int(time())
 
         try:
             sim_id = self.ofono_interface_props['org.ofono.SimManager']['CardIdentifier'].value
-        except Exception as e:
+        except Exception:
             return False
 
         try:
             carrier_name = self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value
-        except Exception as e:
+        except Exception:
             return False
 
         try:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             for ctx in contexts:
-                type = ctx[1].get('Type', Variant('s', '')).value
-                if type.lower() == "internet":
+                ctx_type = ctx[1].get('Type', Variant('s', '')).value
+                if ctx_type.lower() == "internet":
                     apn = ctx[1].get('AccessPointName', Variant('s', '')).value
                     username = ctx[1].get('Username', Variant('s', '')).value
                     password = ctx[1].get('Password', Variant('s', '')).value
-        except Exception as e:
+        except Exception:
             return False
 
         connection_settings = {
             'connection': {
                 'id': f'{carrier_name}',
-                'uuid': str(uuid.uuid4()),
+                'uuid': str(uuid4()),
                 'type': 'gsm',
                 'timestamp': current_timestamp
             },
@@ -274,7 +274,7 @@ class MMModemSimpleInterface(ServiceInterface):
                 conn = NetworkManager.Settings.AddConnection(connection_settings)
                 ofono2mm_print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.", self.verbose)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def network_manager_connection_exists(self, target_apn):
@@ -282,13 +282,13 @@ class MMModemSimpleInterface(ServiceInterface):
 
         found = False
 
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        DBusGMainLoop(set_as_default=True)
 
         # for some reason NetworkManager.NetworkManager.Reload doesn't work correctly
-        bus = dbus.SystemBus()
+        bus = SystemBus()
         nm = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
 
-        nm_settings = dbus.Interface(nm, "org.freedesktop.NetworkManager.Settings")
+        nm_settings = Interface(nm, "org.freedesktop.NetworkManager.Settings")
         nm_settings.ReloadConnections()
 
         connections = NetworkManager.Settings.ListConnections()

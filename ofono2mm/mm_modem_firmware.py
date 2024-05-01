@@ -1,4 +1,4 @@
-from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
+from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
@@ -51,4 +51,4 @@ class MMModemFirmwareInterface(ServiceInterface):
 
     @method()
     def Select(self, uniqueid: 's'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot select firmware: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot select firmware: operation not supported')

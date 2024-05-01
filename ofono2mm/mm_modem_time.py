@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
@@ -61,7 +61,7 @@ class MMModemTimeInterface(ServiceInterface):
             else:
                 self.network_time = datetime.now().isoformat()
         else:
-            ofono2mm_print(f"oFono NetworkTime is unavailable, using system time", self.verbose)
+            ofono2mm_print("oFono NetworkTime is unavailable, using system time", self.verbose)
             self.network_time = datetime.now().isoformat()
 
         return self.network_time

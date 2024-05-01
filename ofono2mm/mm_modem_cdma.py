@@ -1,4 +1,4 @@
-from dbus_next.service import ServiceInterface, method, dbus_property, signal
+from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
@@ -21,11 +21,11 @@ class MMModemCDMAInterface(ServiceInterface):
 
     @method()
     def Activate(self, carrier_code: 's'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot perform OTA activation: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot perform OTA activation: operation not supported')
 
     @method()
     def ActivateManuel(self, properties: 'a{sv}') -> 'o':
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot perform manual activation: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot perform manual activation: operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def ActivationState(self) -> 'u':

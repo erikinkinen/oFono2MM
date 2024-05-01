@@ -1,4 +1,4 @@
-from dbus_next.service import ServiceInterface, method, dbus_property, signal
+from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
@@ -112,7 +112,7 @@ class MMModemSignalInterface(ServiceInterface):
 
     @method()
     def SetupThresholds(self, settings: 'a{sv}'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot setup thresholds: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot setup thresholds: operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def Rate(self) -> 'u':

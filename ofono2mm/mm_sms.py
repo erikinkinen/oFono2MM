@@ -31,12 +31,10 @@ class MMSmsInterface(ServiceInterface):
     @method()
     def Send(self):
         ofono2mm_print("Sending SMS", self.verbose)
-        pass
 
     @method()
     def Store(self, storage: 'u'):
         ofono2mm_print(f"Storing SMS to {storage}", self.verbose)
-        pass
 
     @dbus_property(access=PropertyAccess.READ)
     def State(self) -> 'u':

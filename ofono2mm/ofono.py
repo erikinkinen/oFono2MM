@@ -1,12 +1,3 @@
-from dbus_next.service import (ServiceInterface,
-                               method, dbus_property, signal)
-from dbus_next.constants import PropertyAccess
-from dbus_next import Variant, DBusError, BusType
-
-from ofono2mm.logging import ofono2mm_print
-
-import asyncio
-
 class ObjectProxy:
     def __init__(self, parent, getter, getter_args):
         self.parent = parent
@@ -61,7 +52,7 @@ class CachedClient:
 
             try:
                 self.cache[interface_hashed] = self.cache[path_hashed].get_interface(interface)
-            except Exception as e:
+            except Exception:
                 self.cache[interface_hashed] = None  # skip over org.ofono.IpMultimediaSystem
 
         return self.cache[interface_hashed]

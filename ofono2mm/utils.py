@@ -1,8 +1,9 @@
 import asyncio
-import os
+from os import makedirs
+from os.path import join, exists
 
 settings_dir = '/var/lib/ofono2mm'
-settings_file = os.path.join(settings_dir, 'settings.conf')
+settings_file = join(settings_dir, 'settings.conf')
 
 def async_retryable(times=0):
     """
@@ -47,8 +48,8 @@ def async_locked(func):
     return wrapper
 
 def save_setting(key, value):
-    if not os.path.exists(settings_dir):
-        os.makedirs(settings_dir)
+    if not exists(settings_dir):
+        makedirs(settings_dir)
 
     settings = parse_settings()
 
@@ -64,7 +65,7 @@ def read_setting(key):
 
 def parse_settings():
     settings = {}
-    if os.path.exists(settings_file):
+    if exists(settings_file):
         with open(settings_file, 'r') as file:
             for line in file:
                 if ':' in line:

@@ -2,22 +2,22 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import sys
+import re
 import subprocess
 import time
 import ipaddress
-import dbus
-import sys
 import argparse
-import re
 import tempfile
 import tabulate
+import dbus
 
 bus = None
 manager = None
 
 def fatal(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
-    exit(1)
+    sys.exit(1)
 
 def set_property_wait(interface, property, value, timeout=10):
     interface.SetProperty(property, value, timeout=120)
@@ -126,7 +126,7 @@ def action_power(component, state, command):
 
     if len(modems) == 0:
         print("No modems found")
-        exit(1)
+        sys.exit(1)
 
     if component == 'Online' and state:
         powered = modems[0][1]['Powered'] == 1
@@ -134,7 +134,7 @@ def action_power(component, state, command):
             print("Trying to online a modem that's not powered on. Running power on first...")
             action_power('Powered', True, 'poweron')
 
-    for path, properties in modems:
+    for path in modems:
         model = path[1:]
         modem = dbus.Interface(bus.get_object('org.ofono', path), 'org.ofono.Modem')
         if set_property_wait(modem, component, dbus.Boolean(1 if state else 0)):
@@ -149,7 +149,7 @@ def action_scan_operators():
     modems = manager.GetModems()
     if len(modems) == 0:
         print("No modems found")
-        exit(1)
+        sys.exit(1)
     modem = modems[0][0]
 
     netreg = dbus.Interface(bus.get_object('org.ofono', modem), 'org.ofono.NetworkRegistration')
@@ -170,7 +170,7 @@ def action_wan(connect=False, resolv=False):
     modems = manager.GetModems()
     if len(modems) == 0:
         print("No modems found")
-        exit(1)
+        sys.exit(1)
     modem = modems[0][0]
 
     if 'Powered' in modems[0][1]:
@@ -178,26 +178,26 @@ def action_wan(connect=False, resolv=False):
         if not powered:
             print("The modem is not powered, can't control WAN settings")
             print("You can power on the modem using ofonoctl poweron")
-            exit(1)
+            sys.exit(1)
 
     if 'Online' in modems[0][1]:
         online = modems[0][1]['Online'] == 1
         if not online:
             print("The modem is offline, can't control WAN settings")
             print("You can bring the modem online using ofonoctl online")
-            exit(1)
+            sys.exit(1)
 
     connman = dbus.Interface(bus.get_object('org.ofono', modem), 'org.ofono.ConnectionManager')
     try:
         contexts = connman.GetContexts()
     except dbus.exceptions.DBusException:
         print("Could not fetch contexts on the modem")
-        exit(1)
+        sys.exit(1)
 
     has_flushed = False
 
     result = []
-    for path, properties in contexts:
+    for properties in contexts:
         settings4 = properties['Settings']
         settings6 = properties['IPv6.Settings']
         dns_servers = []
@@ -211,7 +211,7 @@ def action_wan(connect=False, resolv=False):
                     has_flushed = True
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to flush: {e}")
-                    exit(1)
+                    sys.exit(1)
 
             address = s["Address"] if s["Method"] == "static" else ""
             gateway = s["Gateway"] if s["Method"] == "static" else ""
@@ -227,7 +227,7 @@ def action_wan(connect=False, resolv=False):
                     subprocess.check_output(cmd)
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to set the ip address {address}: {e}")
-                    exit(1)
+                    sys.exit(1)
 
                 cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
                 try:
@@ -242,7 +242,7 @@ def action_wan(connect=False, resolv=False):
                         subprocess.check_output(cmd)
                     except subprocess.CalledProcessError as e:
                         print(f"Failed to set the default dns {dns4_server} for gateway {gateway}: {e}")
-                        exit(1)
+                        sys.exit(1)
 
             if s["Method"] == "static":
                 dns_servers += dns4_servers
@@ -257,7 +257,7 @@ def action_wan(connect=False, resolv=False):
                     has_flushed = True
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to flush: {e}")
-                    exit(1)
+                    sys.exit(1)
 
             address = s["Address"]
             gateway = s["Gateway"]
@@ -271,14 +271,14 @@ def action_wan(connect=False, resolv=False):
                     subprocess.check_output(cmd)
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to set the ip address {address}: {e}")
-                    exit(1)
+                    sys.exit(1)
 
                 cmd = ['ip', 'route', 'replace', 'default', 'via', gateway, 'dev', s["Interface"]]
                 try:
                     subprocess.check_output(cmd)
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to set the default gateway {gateway}: {e}")
-                    exit(1)
+                    sys.exit(1)
 
                 # ensure that we route traffic to WWAN dns servers over the WWAN interface
                 for dns6_server in dns6_servers:
@@ -287,7 +287,7 @@ def action_wan(connect=False, resolv=False):
                         subprocess.check_output(cmd)
                     except subprocess.CalledProcessError as e:
                         print(f"Failed to set the default dns {dns6_server} for gateway {gateway}: {e}")
-                        exit(1)
+                        sys.exit(1)
 
             dns_servers += dns6_servers
 
@@ -302,7 +302,7 @@ def action_sms(destination, message=None):
     modems = manager.GetModems()
     if len(modems) == 0:
         print("No modems found")
-        exit(1)
+        sys.exit(1)
     modem = modems[0][0]
 
     if message is None:
@@ -320,7 +320,7 @@ def action_sms(destination, message=None):
 
     if len(message) == 0:
         print("Message empty. Aborting...")
-        exit(1)
+        sys.exit(1)
 
     mm = dbus.Interface(bus.get_object('org.ofono', modem), 'org.ofono.MessageManager')
     mm.SendMessage(destination, message)
@@ -332,7 +332,7 @@ def action_sms_get():
     modems = manager.GetModems()
     if len(modems) == 0:
         print("No modems found")
-        exit(1)
+        sys.exit(1)
     modem = modems[0][0]
 
     mm = dbus.Interface(bus.get_object('org.ofono', modem), 'org.ofono.MessageManager')

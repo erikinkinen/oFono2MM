@@ -1,12 +1,11 @@
-from dbus_next.service import (ServiceInterface,
-                               method, dbus_property, signal)
-from dbus_next.constants import PropertyAccess
-from dbus_next import Variant, DBusError, BusType
-
-from ofono2mm.utils import async_retryable, save_setting, read_setting
-from ofono2mm.logging import ofono2mm_print
-
 import asyncio
+
+from dbus_next.service import ServiceInterface, method, dbus_property
+from dbus_next.constants import PropertyAccess
+from dbus_next import Variant
+
+from ofono2mm.utils import async_retryable, save_setting
+from ofono2mm.logging import ofono2mm_print
 
 class MMBearerInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, mm_modem, verbose=False):
@@ -102,7 +101,6 @@ class MMBearerInterface(ServiceInterface):
             self.context_names = []
             ctx_idx = 0
             chosen_apn = None
-            chosen_ctx_path = None
             for ctx in contexts:
                 name = ctx[1].get('Type', Variant('s', '')).value
                 access_point_name = ctx[1].get('AccessPointName', Variant('s', '')).value
@@ -117,7 +115,6 @@ class MMBearerInterface(ServiceInterface):
                         chosen_auth_method = auth_method
                         chosen_username = username
                         chosen_password = password
-                        chosen_ctx_path = ctx[0]
 
             self.props['Properties'].value['apn'] = Variant('s', chosen_apn if chosen_apn != '' else '')
             self.props['Properties'].value['user'] = Variant('s', chosen_username if chosen_username != '' else '')

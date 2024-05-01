@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 
+import asyncio
+from os import environ
+from argparse import ArgumentParser
+
 from dbus_next.aio import MessageBus
 from dbus_next.service import (ServiceInterface,
                                method, dbus_property)
 from dbus_next.constants import PropertyAccess
 from dbus_next import DBusError, BusType
-from dbus_next import Variant
-
-import asyncio
 
 from ofono2mm import MMModemInterface, Ofono, DBus
-from ofono2mm.utils import async_locked, save_setting, read_setting
+from ofono2mm.utils import async_locked, read_setting
 from ofono2mm.logging import ofono2mm_print
-
-import argparse
-import os
 
 has_bus = False
 sim_i = 0
@@ -32,7 +30,6 @@ class MMInterface(ServiceInterface):
         self.mm_modem_interfaces = []
         self.mm_modem_objects = []
         self.offline_modems = []
-        self.settings_dir = "/var/lib/ofono2mm"
         self.loop.create_task(self.check_ofono_presence())
 
     @dbus_property(access=PropertyAccess.READ)
@@ -85,14 +82,14 @@ class MMInterface(ServiceInterface):
         self.offline_modems = []
 
         if not self.ofono_manager_interface:
-            ofono2mm_print(f"oFono manager interface is empty, skipping", self.verbose)
+            ofono2mm_print("oFono manager interface is empty, skipping", self.verbose)
             return
 
         self.ofono_modem_list = False
         while not self.ofono_modem_list:
             try:
                 if self.ofono_manager_interface is None:
-                    ofono2mm_print(f"oFono manager interface is not initialized properly. skipping", self.verbose)
+                    ofono2mm_print("oFono manager interface is not initialized properly. skipping", self.verbose)
                     return
 
                 modems = await self.ofono_manager_interface.call_get_modems()
@@ -183,11 +180,11 @@ class MMInterface(ServiceInterface):
         mm_modem_simple = mm_modem_interface.get_mm_modem_simple_interface()
         try:
             self.loop.create_task(self.simple_set_apn(mm_modem_simple))
-        except Exception as e:
+        except Exception:
             pass
 
         if read_setting('data').strip() == 'True':
-            ofono2mm_print(f"Activating context on startup", self.verbose)
+            ofono2mm_print("Activating context on startup", self.verbose)
 
             try:
                 self.loop.create_task(self.startup_activate_context(mm_modem_simple, mm_modem_interface))
@@ -220,7 +217,7 @@ class MMInterface(ServiceInterface):
         while True:
             ret = await mm_modem_simple.network_manager_set_apn()
             if ret == True:
-               return
+                return
 
             await asyncio.sleep(2)
 
@@ -258,7 +255,7 @@ def custom_help(parser):
     print("\nDBus system service to control mobile broadband modems through oFono.")
 
 async def main():
-    parser = argparse.ArgumentParser(description="Run the ModemManager interface.", add_help=False)
+    parser = ArgumentParser(description="Run the ModemManager interface.", add_help=False)
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output.')
     parser.add_argument('-V', '--version', action='store_true', help='Print version.')
     parser.add_argument('-h', '--help', action='store_true', help='Show help.')
@@ -273,7 +270,7 @@ async def main():
         custom_help(parser)
         return
 
-    if os.environ.get('MODEM_DEBUG', 'false').lower() == 'true':
+    if environ.get('MODEM_DEBUG', 'false').lower() == 'true':
         verbose = True
     else:
         verbose = args.verbose

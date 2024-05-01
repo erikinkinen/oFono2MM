@@ -1,10 +1,10 @@
-from dbus_next.service import ServiceInterface, method, dbus_property, signal
+import asyncio
+
+from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
-
-import asyncio
 
 class MMModem3gppUssdInterface(ServiceInterface):
     def __init__(self, ofono_interfaces, verbose=False):
@@ -24,7 +24,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         ofono2mm_print(f"Initiating USSD with command {command}", self.verbose)
 
         if self.props['State'].value in (2, 3): # 2: active, 3: user-response
-            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot initiate USSD: a session is already active')
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', 'Cannot initiate USSD: a session is already active')
 
         ret = await self.run_initiate(command)
         return ret
@@ -50,7 +50,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
         ofono2mm_print(f"Respond to 3GPP with command {response}", self.verbose)
 
         if self.props['State'].value in (1, 2): # 1: idle, 2: active
-            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot respond USSD: no active session')
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', 'Cannot respond USSD: no active session')
 
         # for some reason ofono refuses to respond for 20-30 seconds after it has been initiated
         retries = 10
@@ -61,8 +61,8 @@ class MMModem3gppUssdInterface(ServiceInterface):
             except Exception as e:
                 ofono2mm_print(f"Attempt {attempt + 1}: Failed to respond: {e}", self.verbose)
                 if str(e) == "Operation already in progress" and attempt < retries - 1:
-                   # there must be a better way...
-                   await asyncio.sleep(5)
+                    # there must be a better way...
+                    await asyncio.sleep(5)
                 else:
                     return ''
         return ''
@@ -75,7 +75,7 @@ class MMModem3gppUssdInterface(ServiceInterface):
             await self.ofono_interfaces['org.ofono.SupplementaryServices'].call_cancel()
         except DBusError as e:
             if "Operation is not active or in progress" in str(e):
-                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Cannot respond USSD: no active session')
+                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', 'Cannot respond USSD: no active session')
         except Exception as e:
             ofono2mm_print(f"Failed to cancel USSD: {e}", self.verbose)
 

@@ -1,11 +1,11 @@
+from time import sleep
+
 from dbus_next.service import ServiceInterface, method, dbus_property, signal
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
 from ofono2mm.mm_call import MMCallInterface
 from ofono2mm.logging import ofono2mm_print
-
-import time
 
 call_i = 1
 
@@ -118,7 +118,7 @@ class MMModemVoiceInterface(ServiceInterface):
                     # print(f'activate context on apn {chosen_apn}')
                     chosen_ctx_interface = self.ofono_client["ofono_context"][chosen_ctx_path]['org.ofono.ConnectionContext']
                     # on some carriers context does not get reactivated after a call automatically, lets do it ourselves just in case
-                    time.sleep(2) # wait a bit for the call to end
+                    sleep(2) # wait a bit for the call to end
                     try:
                         await chosen_ctx_interface.call_set_property("Active", Variant('b', True))
                     except Exception as e:
@@ -178,7 +178,7 @@ class MMModemVoiceInterface(ServiceInterface):
     @method()
     async def HoldAndAccept(self):
         ofono2mm_print("Holding and accepting call", self.verbose)
-        result = await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hold_and_answer()
+        await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hold_and_answer()
 
     @method()
     async def HangupAndAccept(self):
@@ -199,7 +199,6 @@ class MMModemVoiceInterface(ServiceInterface):
     @method()
     def CallWaitingSetup(self, enable: 'b'):
         ofono2mm_print(f"Activate call waiting network: {enable}", self.verbose)
-        pass
 
     @method()
     def CallWaitingQuery(self) -> 'b':

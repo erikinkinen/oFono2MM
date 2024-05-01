@@ -98,7 +98,7 @@ class MMModemMessagingInterface(ServiceInterface):
         message_i += 1
 
         if 'org.ofono.MessageManager' in self.ofono_interfaces:
-            ofono_sms_path = await self.ofono_interfaces['org.ofono.MessageManager'].call_send_message(properties['number'].value, properties['text'].value)
+            await self.ofono_interfaces['org.ofono.MessageManager'].call_send_message(properties['number'].value, properties['text'].value)
 
         return f'/org/freedesktop/ModemManager1/SMS/{message_i_old}'
 

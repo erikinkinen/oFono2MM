@@ -1,11 +1,10 @@
-from dbus_next.service import (ServiceInterface,
-                               method, dbus_property, signal)
+import asyncio
+
+from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
-
-import asyncio
 
 class MMModem3gppInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
@@ -93,8 +92,8 @@ class MMModem3gppInterface(ServiceInterface):
         try:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             for ctx in contexts:
-                type = ctx[1].get('Type', Variant('s', '')).value
-                if type.lower() == "internet":
+                ctx_type = ctx[1].get('Type', Variant('s', '')).value
+                if ctx_type.lower() == "internet":
                     apn = ctx[1].get('AccessPointName', Variant('s', '')).value
                     auth_method = ctx[1].get('AuthenticationMethod', Variant('s', '')).value
 
@@ -106,7 +105,7 @@ class MMModem3gppInterface(ServiceInterface):
                     elif auth_method == 'chap':
                         self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 3) # chap MM_BEARER_ALLOWED_AUTH_CHAP
                     else:
-                       self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 0) # unknown MM_BEARER_ALLOWED_AUTH_UNKNOWN
+                        self.props['InitialEpsBearerSettings'].value['allowed-auth'] = Variant('u', 0) # unknown MM_BEARER_ALLOWED_AUTH_UNKNOWN
         except Exception as e:
             ofono2mm_print(f"Failed to set eps bearer settings: {e}", self.verbose)
 
@@ -123,9 +122,9 @@ class MMModem3gppInterface(ServiceInterface):
 
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
             if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unknown":
-                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Device not yet enabled')
+                raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', 'Device not yet enabled')
         else:
-            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', f'Device not yet enabled')
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.WrongState', 'Device not yet enabled')
 
         if operator_id == "":
             if 'org.ofono.NetworkRegistration' in self.ofono_interfaces:
@@ -179,27 +178,27 @@ class MMModem3gppInterface(ServiceInterface):
 
     @method()
     async def SetEpsUeModeOperation(self, mode: 'u'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot set UE mode of operation for EPS: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot set UE mode of operation for EPS: operation not supported')
 
     @method()
     async def SetInitialEpsBearerSettings(self, settings: 'a{sv}'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Operation not supported')
 
     @method()
     async def SetNr5gRegistrationSettings(self, properties: 'a{sv}'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Operation not supported')
 
     @method()
     async def DisableFacilityLock(self, properties: '(us)'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Operation not supported')
 
     @method()
     async def SetCarrierLock(self, data: 'ay'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Cannot send set carrier lock request to modem: operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot send set carrier lock request to modem: operation not supported')
 
     @method()
     async def SetPacketServiceState(self, state: 'u'):
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'Explicit packet service attach/detach operation not supported')
+        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Explicit packet service attach/detach operation not supported')
 
     @dbus_property(access=PropertyAccess.READ)
     def Imei(self) -> 's':
