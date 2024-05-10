@@ -19,11 +19,13 @@ from ofono2mm.mm_sim import MMSimInterface
 from ofono2mm.mm_bearer import MMBearerInterface
 from ofono2mm.mm_modem_voice import MMModemVoiceInterface
 from ofono2mm.logging import ofono2mm_print
+from ofono2mm.utils import read_setting, save_setting
 
 import asyncio
 from glob import glob
 from time import time, sleep
 from re import split
+from ast import literal_eval
 
 bearer_i = 0
 
@@ -693,6 +695,12 @@ class MMModemInterface(ServiceInterface):
         self.props['SupportedModes'] = Variant('a(uu)', supported_modes)
         if self.selected_current_mode in supported_modes:
             self.props['CurrentModes'] = Variant('(uu)', self.selected_current_mode)
+        elif read_setting("current_mode") != "False":
+            self.selected_current_mode = literal_eval(read_setting("current_mode").strip())
+            if self.selected_current_mode in supported_modes:
+                self.props['CurrentModes'] = Variant('(uu)', self.selected_current_mode)
+            else:
+                self.props['CurrentModes'] = Variant('(uu)', [8, 0])
         else:
             self.props['CurrentModes'] = Variant('(uu)', [8, 0]) # allowed 4g, preferred none
 
@@ -897,6 +905,7 @@ class MMModemInterface(ServiceInterface):
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
 
             self.selected_current_mode = modes
+            save_setting('current_mode', str(modes))
         else:
             raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'The given combination of allowed and preferred modes is not supported')
 
