@@ -105,6 +105,18 @@ class MMInterface(ServiceInterface):
 
                 for modem in self.ofono_modem_list:
                     ofono2mm_print(f"Selected modem: {modem[0]}", self.verbose)
+
+                    if modem[1]['Online'].value == False:
+                        try:
+                            for i in range(5):
+                                ofono2mm_print(f"Setting modem {modem[0]} to online", self.verbose)
+                                self.ofono_modem = self.ofono_client["ofono_modem"][modem[0]]['org.ofono.Modem']
+                                await self.ofono_modem.call_set_property('Online', Variant('b', True))
+                                modem[1]['Online'].value = True
+                                break
+                        except DBusError as e:
+                            ofono2mm_print(f"Error setting modem {modem[0]} to online: {e}", self.verbose)
+                            asyncio.sleep(0.5)
             except DBusError as e:
                 ofono2mm_print(f"Failed to get the current modem: {e}", self.verbose)
 
