@@ -102,7 +102,44 @@ class MMModemInterface(ServiceInterface):
         await self.check_ofono_contexts()
 
     async def add_ofono_interface(self, iface):
-        ofono2mm_print(f"Add oFono interface for iface {iface}", self.verbose)
+        if iface == "org.ofono.CallSettings":
+            ofono2mm_print("Interface is org.ofono.CallSettings which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.CallVolume":
+            ofono2mm_print("Interface is org.ofono.CallVolume which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.SimToolkit":
+            ofono2mm_print("Interface is org.ofono.SimToolkit which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.Phonebook":
+            ofono2mm_print("Interface is org.ofono.Phonebook which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.SmartMessaging":
+            ofono2mm_print("Interface is org.ofono.SmartMessaging which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.PushNotification":
+            ofono2mm_print("Interface is org.ofono.PushNotification which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.CallBarring":
+            ofono2mm_print("Interface is org.ofono.CallBarring which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.CallForwarding":
+            ofono2mm_print("Interface is org.ofono.CallForwarding which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.MessageWaiting":
+            ofono2mm_print("Interface is org.ofono.MessageWaiting which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.ofono.AllowedAccessPoints":
+            ofono2mm_print("Interface is org.ofono.AllowedAccessPoints which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.nemomobile.ofono.CellInfo":
+            ofono2mm_print("Interface is org.nemomobile.ofono.CellInfo which is unused, skipping", self.verbose)
+            return
+        elif iface == "org.nemomobile.ofono.SimInfo":
+            ofono2mm_print("Interface is org.nemomobile.ofono.CellInfo which is unused, skipping", self.verbose)
+            return
+        else:
+            ofono2mm_print(f"Add oFono interface for iface {iface}", self.verbose)
 
         self.ofono_interfaces.update({
             iface: self.ofono_proxy[iface]
