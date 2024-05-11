@@ -135,8 +135,8 @@ def action_power(component, state, command):
             action_power('Powered', True, 'poweron')
 
     for path in modems:
-        model = path[1:]
-        modem = dbus.Interface(bus.get_object('org.ofono', path), 'org.ofono.Modem')
+        model = path[0]
+        modem = dbus.Interface(bus.get_object('org.ofono', model), 'org.ofono.Modem')
         if set_property_wait(modem, component, dbus.Boolean(1 if state else 0)):
             print(message[command][0].format(model))
             return
@@ -388,7 +388,7 @@ def main():
         return
 
     if args.action == "poweroff":
-        action_power('Powered', True, 'poweroff')
+        action_power('Powered', False, 'poweroff')
         return
 
     if args.action == "online":
@@ -396,7 +396,7 @@ def main():
         return
 
     if args.action == "offline":
-        action_power('Online', True, 'offline')
+        action_power('Online', False, 'offline')
         return
 
     if args.action == "operators":
