@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import gi
+gi.require_version('Geoclue', '2.0')
 from gi.repository import Geoclue
 
 from dbus_next.service import ServiceInterface, method, dbus_property
@@ -8,8 +9,6 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
-
-gi.require_version('Geoclue', '2.0')
 
 class MMModemLocationInterface(ServiceInterface):
     def __init__(self, verbose=False):
