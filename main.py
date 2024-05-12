@@ -8,7 +8,7 @@ from dbus_next.aio import MessageBus
 from dbus_next.service import (ServiceInterface,
                                method, dbus_property)
 from dbus_next.constants import PropertyAccess
-from dbus_next import DBusError, BusType
+from dbus_next import DBusError, BusType, Variant
 
 from ofono2mm import MMModemInterface, Ofono, DBus
 from ofono2mm.utils import async_locked, read_setting
