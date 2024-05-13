@@ -173,17 +173,24 @@ class MMModemSimpleInterface(ServiceInterface):
                 await self.mm_modem.bearers[b].add_auth_ofono(properties['username'].value if 'username' in properties else '',
                                                                 properties['password'].value if 'password' in properties else '')
                 self.mm_modem.bearers[b].props['Properties'] = Variant('a{sv}', properties)
-                await self.mm_modem.bearers[b].doConnect()
+                if self.mm_modem.bearers[b].active_connect == 0:
+                    self.mm_modem.bearers[b].active_connect += 1
+                    await self.mm_modem.bearers[b].doConnect()
 
-                if read_setting('data').strip() != 'True':
-                    ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
-                    save_setting('data', 'True')
+                    if read_setting('data').strip() != 'True':
+                        ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
+                        save_setting('data', 'True')
 
-                return b
+                    return b
 
         try:
             bearer = await self.mm_modem.doCreateBearer(properties)
-            await self.mm_modem.bearers[bearer].doConnect()
+            if self.mm_modem.bearers[bearer].active_connect == 0:
+                self.mm_modem.bearers[bearer].active_connect += 1
+                await self.mm_modem.bearers[bearer].doConnect()
+            else:
+                # 0 is always available so just fallback to that, whatever
+                bearer = '/org/freedesktop/ModemManager/Bearer/0'
         except Exception:
             bearer = '/org/freedesktop/ModemManager/Bearer/0'
 

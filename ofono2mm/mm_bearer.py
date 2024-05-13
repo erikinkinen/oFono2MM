@@ -21,6 +21,7 @@ class MMBearerInterface(ServiceInterface):
         self.verbose = verbose
         self.disconnecting = False
         self.reconnect_task = None
+        self.active_connect = 0
         self.props = {
             "Interface": Variant('s', ''),
             "Connected": Variant('b', False),
@@ -153,6 +154,7 @@ class MMBearerInterface(ServiceInterface):
     @method()
     async def Connect(self):
         ofono2mm_print("Connecting", self.verbose)
+        self.active_connect += 1
         await self.doConnect()
 
     @async_retryable()
@@ -165,6 +167,8 @@ class MMBearerInterface(ServiceInterface):
 
         ofono_ctx_interface = self.ofono_client["ofono_context"][self.ofono_ctx]['org.ofono.ConnectionContext']
 
+        ofono2mm_print(f"Number of active connection requests: {self.active_connect}", self.verbose)
+
         try:
             await asyncio.wait_for(ofono_ctx_interface.call_set_property("Active", Variant('b', True)), timeout=5.0)
         except Exception as e:
@@ -175,7 +179,9 @@ class MMBearerInterface(ServiceInterface):
                 raise Exception(str(e))
 
         # Clear the reconnection task
+        self.active_connect -= 1
         self.reconnect_task = None
+        ofono2mm_print(f"Number of active connection requests: {self.active_connect}", self.verbose)
 
     @method()
     async def Disconnect(self):
@@ -194,6 +200,7 @@ class MMBearerInterface(ServiceInterface):
                 self.reconnect_task = None
 
     async def doDisconnect(self):
+        ofono2mm_print("doDisconnect", self.verbose)
         self.disconnecting = True
 
         # Cancel an eventual reconnection task
