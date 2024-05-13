@@ -207,6 +207,10 @@ class MMInterface(ServiceInterface):
         ofono2mm_print("Activating context on startup", self.verbose)
 
         while True:
+            if read_setting('data').strip() == 'False':
+                ofono2mm_print("Data toggle changed to False, no longer need to activate on startup", self.verbose)
+                return
+
             strength = mm_modem_simple.check_signal_strength()
 
             if strength == 0:
