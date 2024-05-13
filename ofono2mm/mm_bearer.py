@@ -4,7 +4,7 @@ from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
-from ofono2mm.utils import async_retryable, save_setting
+from ofono2mm.utils import async_retryable, save_setting, read_setting
 from ofono2mm.logging import ofono2mm_print
 
 class MMBearerInterface(ServiceInterface):
@@ -137,8 +137,9 @@ class MMBearerInterface(ServiceInterface):
             if ofono_props.get('RoamingAllowed', Variant('b', True).value) != "":
                 roaming_allowed = ofono_props.get('RoamingAllowed', Variant('b', True).value).value
 
-                ofono2mm_print("Saving roaming toggle state", self.verbose)
-                save_setting('roaming', str(roaming_allowed))
+                if read_setting('roaming').strip() != str(roaming_allowed):
+                    ofono2mm_print("Saving roaming toggle state", self.verbose)
+                    save_setting('roaming', str(roaming_allowed))
 
                 if roaming_allowed == True:
                     self.props['Properties'].value['roaming-allowance'] = Variant('u', 2) # roaming partner network MM_BEARER_ROAMING_ALLOWANCE_PARTNER
@@ -156,14 +157,22 @@ class MMBearerInterface(ServiceInterface):
 
     @async_retryable()
     async def doConnect(self):
+        ofono2mm_print("doConnect", self.verbose)
         try:
             await self.set_props()
         except Exception as e:
             ofono2mm_print(f"Failed to set props: {e}", self.verbose)
 
-        # print("Do connect")
         ofono_ctx_interface = self.ofono_client["ofono_context"][self.ofono_ctx]['org.ofono.ConnectionContext']
-        await ofono_ctx_interface.call_set_property("Active", Variant('b', True))
+
+        try:
+            await asyncio.wait_for(ofono_ctx_interface.call_set_property("Active", Variant('b', True)), timeout=5.0)
+        except Exception as e:
+            if "GPRS" in str(e):
+                # no signal? wait a litle and try again
+                ofono2mm_print(f"Failed to set context to active: {e}", self.verbose)
+                await asyncio.sleep(5)
+                raise Exception(str(e))
 
         # Clear the reconnection task
         self.reconnect_task = None
