@@ -942,7 +942,9 @@ class MMModemInterface(ServiceInterface):
                     await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
 
             self.selected_current_mode = modes
-            save_setting('current_mode', str(modes))
+            if read_setting('current_mode').strip() != str(modes):
+                ofono2mm_print(f"Saving selected current mode {modes}", self.verbose)
+                save_setting('current_mode', str(modes))
         else:
             raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', f'The given combination of allowed and preferred modes is not supported')
 
@@ -1164,7 +1166,6 @@ class MMModemInterface(ServiceInterface):
                 type = ctx[1].get('Type', Variant('s', '')).value
                 if type.lower() == "internet":
                     ofono_ctx_interface = self.ofono_client["ofono_context"][ctx[0]]["org.ofono.ConnectionContext"]
-                    apn = ctx[1].get('AccessPointName', Variant('s', '')).value
                     await ofono_ctx_interface.call_set_property("Active", Variant('b', True))
                     return True
         except Exception as e:
