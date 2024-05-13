@@ -802,7 +802,7 @@ class MMModemInterface(ServiceInterface):
             ofono2mm_print("oFono ConnectionManager is not available, skipping", self.verbose)
             return
 
-        # print(f"docreatebearer {bearer_i}" )
+        ofono2mm_print(f"doCreateBearer {bearer_i}, properties: {properties}" )
         mm_bearer_interface = MMBearerInterface(self.ofono_client, self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self, self.verbose)
         mm_bearer_interface.props.update({
             "Properties": Variant('a{sv}', properties)
