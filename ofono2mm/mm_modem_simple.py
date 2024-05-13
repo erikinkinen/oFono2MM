@@ -7,7 +7,7 @@ from dbus_next.service import ServiceInterface, method
 from dbus_next import Variant
 
 from ofono2mm.logging import ofono2mm_print
-from ofono2mm.utils import save_setting
+from ofono2mm.utils import save_setting, read_setting
 
 from dbus import SystemBus, Interface
 from dbus.mainloop.glib import DBusGMainLoop
@@ -175,8 +175,10 @@ class MMModemSimpleInterface(ServiceInterface):
                 self.mm_modem.bearers[b].props['Properties'] = Variant('a{sv}', properties)
                 await self.mm_modem.bearers[b].doConnect()
 
-                ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
-                save_setting('data', 'True')
+                if read_setting('data').strip() != 'True':
+                    ofono2mm_print("Saving context toggle state during connection of existing bearers", self.verbose)
+                    save_setting('data', 'True')
+
                 return b
 
         try:
@@ -185,8 +187,9 @@ class MMModemSimpleInterface(ServiceInterface):
         except Exception:
             bearer = '/org/freedesktop/ModemManager/Bearer/0'
 
-        ofono2mm_print("Saving context toggle state on bearer creation", self.verbose)
-        save_setting('data', 'True')
+        if read_setting('data').strip() != 'True':
+            ofono2mm_print("Saving context toggle state on bearer creation", self.verbose)
+            save_setting('data', 'True')
 
         return bearer
 
@@ -206,8 +209,9 @@ class MMModemSimpleInterface(ServiceInterface):
             except Exception as e:
                 ofono2mm_print(f"Failed to disconnect bearer {path}: {e}", self.verbose)
 
-        ofono2mm_print("Saving context toggle state", self.verbose)
-        save_setting('data', 'False')
+        if read_setting('data').strip() != 'False':
+            ofono2mm_print("Saving context toggle state", self.verbose)
+            save_setting('data', 'False')
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
