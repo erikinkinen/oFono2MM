@@ -204,6 +204,10 @@ class MMModemSimpleInterface(ServiceInterface):
     async def Disconnect(self, path: 'o'):
         ofono2mm_print(f"Disconnecting object path {path}", self.verbose)
 
+        if read_setting('data').strip() != 'False':
+            ofono2mm_print("Saving context toggle state", self.verbose)
+            save_setting('data', 'False')
+
         if path == '/':
             for b in self.mm_modem.bearers:
                 try:
@@ -215,10 +219,6 @@ class MMModemSimpleInterface(ServiceInterface):
                 await self.mm_modem.bearers[path].doDisconnect()
             except Exception as e:
                 ofono2mm_print(f"Failed to disconnect bearer {path}: {e}", self.verbose)
-
-        if read_setting('data').strip() != 'False':
-            ofono2mm_print("Saving context toggle state", self.verbose)
-            save_setting('data', 'False')
 
     @method()
     async def GetStatus(self) -> 'a{sv}':
