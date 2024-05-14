@@ -30,6 +30,7 @@ class MMInterface(ServiceInterface):
         self.mm_modem_interfaces = []
         self.mm_modem_objects = []
         self.offline_modems = []
+        self.modem_added_block = False
         self.loop.create_task(self.check_ofono_presence())
 
     @dbus_property(access=PropertyAccess.READ)
@@ -86,6 +87,7 @@ class MMInterface(ServiceInterface):
             return
 
         self.ofono_modem_list = False
+        self.modem_added_block = True
         while not self.ofono_modem_list:
             try:
                 if self.ofono_manager_interface is None:
@@ -164,6 +166,10 @@ class MMInterface(ServiceInterface):
     def ofono_modem_added(self, path, mprops):
         ofono2mm_print(f"oFono modem added at path {path} and properties {mprops}", self.verbose)
 
+        if self.modem_added_block:
+            ofono2mm_print(f"oFono modem block is on, skipping", self.verbose)
+            return
+
         try:
             self.loop.create_task(self.export_new_modem(path, mprops))
         except Exception as e:
@@ -176,6 +182,7 @@ class MMInterface(ServiceInterface):
         self.ofono_client["ofono_modem"][path]['org.ofono.Modem'].on_property_changed(mm_modem_interface.ofono_changed)
         await mm_modem_interface.init_ofono_interfaces()
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.i}', mm_modem_interface)
+        self.modem_added_block = False
         mm_modem_interface.set_props()
         await mm_modem_interface.init_mm_sim_interface()
         await mm_modem_interface.init_mm_3gpp_interface()
