@@ -336,6 +336,25 @@ class MMModemInterface(ServiceInterface):
     def get_mm_modem_simple_interface(self):
         return self.mm_modem_simple_interface
 
+    async def context_active_changed(self, property, propvalue):
+        if property == "Active":
+            if read_setting('data').strip() == "True":
+                if propvalue.value == False:
+                    ofono2mm_print("oFono connection dropped while we still need it, reactivating context", self.verbose)
+                    while True:
+                        if read_setting('data').strip() == 'False':
+                            ofono2mm_print("Data toggle changed to False, no longer need to reactivate context", self.verbose)
+                            return
+
+                        try:
+                            ret = await self.activate_internet_context()
+                            if ret == True:
+                                return
+                        except Exception as e:
+                            ofono2mm_print(f"Failed to activate context: {e}", self.verbose)
+
+                        await asyncio.sleep(2)
+
     async def check_ofono_contexts(self):
         ofono2mm_print("Checking ofono contexts", self.verbose)
 
