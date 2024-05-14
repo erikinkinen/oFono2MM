@@ -103,6 +103,11 @@ class MMInterface(ServiceInterface):
                     if x[0].startswith("/ril_") or x[0].startswith("/phonesim") # FIXME
                 ]
 
+                if not self.ofono_modem_list:
+                    ofono2mm_print("No modems available, retrying", self.verbose)
+                    await asyncio.sleep(2)
+                    continue
+
                 for modem in self.ofono_modem_list:
                     ofono2mm_print(f"Selected modem: {modem[0]}", self.verbose)
 
@@ -116,9 +121,11 @@ class MMInterface(ServiceInterface):
                                 break
                         except DBusError as e:
                             ofono2mm_print(f"Error setting modem {modem[0]} to online: {e}", self.verbose)
+                            self.ofono_modem_list = False
                             await asyncio.sleep(0.5)
             except DBusError as e:
                 ofono2mm_print(f"Failed to get the current modem: {e}", self.verbose)
+                self.ofono_modem_list = False
 
         self.i = 0
         sim_i = len(self.ofono_modem_list)
