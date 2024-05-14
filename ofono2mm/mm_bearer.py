@@ -178,8 +178,10 @@ class MMBearerInterface(ServiceInterface):
                 await asyncio.sleep(5)
                 raise Exception(str(e))
 
+        if self.active_connect >= 1:
+            self.active_connect -= 1
+
         # Clear the reconnection task
-        self.active_connect -= 1
         self.reconnect_task = None
         ofono2mm_print(f"Number of active connection requests: {self.active_connect}", self.verbose)
 
