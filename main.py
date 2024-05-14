@@ -116,7 +116,7 @@ class MMInterface(ServiceInterface):
                                 break
                         except DBusError as e:
                             ofono2mm_print(f"Error setting modem {modem[0]} to online: {e}", self.verbose)
-                            asyncio.sleep(0.5)
+                            await asyncio.sleep(0.5)
             except DBusError as e:
                 ofono2mm_print(f"Failed to get the current modem: {e}", self.verbose)
 
