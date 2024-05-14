@@ -31,6 +31,7 @@ class MMInterface(ServiceInterface):
         self.mm_modem_objects = []
         self.offline_modems = []
         self.modem_added_block = False
+        self.apn_task = None
         self.loop.create_task(self.check_ofono_presence())
 
     @dbus_property(access=PropertyAccess.READ)
@@ -177,6 +178,11 @@ class MMInterface(ServiceInterface):
 
     async def export_new_modem(self, path, mprops):
         ofono2mm_print(f"Processing modem {path} with properties {mprops}", self.verbose)
+        for mm_modem in self.mm_modem_interfaces:
+            if mm_modem.modem_name == path:
+                ofono2mm_print(f"Modem {path} is already exported, skipping", self.verbose)
+                return
+
         mm_modem_interface = MMModemInterface(self.loop, self.i, self.bus, self.ofono_client, path, self.verbose)
         mm_modem_interface.ofono_props = mprops
         self.ofono_client["ofono_modem"][path]['org.ofono.Modem'].on_property_changed(mm_modem_interface.ofono_changed)
@@ -203,10 +209,11 @@ class MMInterface(ServiceInterface):
         self.i += 1
 
         mm_modem_simple = mm_modem_interface.get_mm_modem_simple_interface()
-        try:
-            self.loop.create_task(self.simple_set_apn(mm_modem_simple))
-        except Exception:
-            pass
+        if self.apn_task != None:
+            try:
+                self.apn_task = self.loop.create_task(self.simple_set_apn(mm_modem_simple))
+            except Exception:
+                pass
 
         if read_setting('data').strip() == 'True':
             ofono2mm_print("Activating context on startup", self.verbose)
@@ -246,6 +253,7 @@ class MMInterface(ServiceInterface):
         while True:
             ret = await mm_modem_simple.network_manager_set_apn()
             if ret == True:
+                self.apn_task = None
                 return
 
             await asyncio.sleep(2)
@@ -255,12 +263,17 @@ class MMInterface(ServiceInterface):
 
         for mm_object in self.mm_modem_objects:
             try:
-                print(self.mm_modem_interfaces)
                 for mm_modem in self.mm_modem_interfaces:
                     if mm_modem.modem_name == path:
                         ofono2mm_print(f"oFono path matches our modem interface path, unexporting", self.verbose)
+                        mm_modem.unexport_mm_interface_objects()
+                        self.bus.unexport(mm_object)
+                        mm_modem = None
             except Exception as e:
                 ofono2mm_print(f"Failed to unexport modem at path {path} with object path {mm_object}: {e}", self.verbose)
+
+        self.mm_modem_objects = []
+        self.mm_modem_interfaces = []
 
     @method()
     def SetLogging(self, level: 's'):
