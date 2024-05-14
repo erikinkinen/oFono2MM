@@ -147,9 +147,8 @@ class MMInterface(ServiceInterface):
             has_bus = True
 
     def dbus_name_owner_changed(self, name, old_owner, new_owner):
-        ofono2mm_print(f"oFono name owner changed, name: {name}, old owner: {old_owner}, new owner: {new_owner}", self.verbose)
-
         if name == "org.ofono":
+            ofono2mm_print(f"oFono name owner changed, name: {name}, old owner: {old_owner}, new owner: {new_owner}", self.verbose)
             if new_owner == "":
                 self.ofono_removed()
             elif old_owner == "":
