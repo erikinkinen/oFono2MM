@@ -251,14 +251,16 @@ class MMInterface(ServiceInterface):
             await asyncio.sleep(2)
 
     def ofono_modem_removed(self, path):
-        ofono2mm_print("oFono modem removed at path {path}", self.verbose)
+        ofono2mm_print(f"oFono modem removed at path {path}", self.verbose)
 
         for mm_object in self.mm_modem_objects:
             try:
-                if mm_object.modem_name == path:
-                    self.bus.unexport(mm_object)
+                print(self.mm_modem_interfaces)
+                for mm_modem in self.mm_modem_interfaces:
+                    if mm_modem.modem_name == path:
+                        ofono2mm_print(f"oFono path matches our modem interface path, unexporting", self.verbose)
             except Exception as e:
-                ofono2mm_print(f"Failed unexport modem at path {path}: {e}", self.verbose)
+                ofono2mm_print(f"Failed to unexport modem at path {path} with object path {mm_object}: {e}", self.verbose)
 
     @method()
     def SetLogging(self, level: 's'):
