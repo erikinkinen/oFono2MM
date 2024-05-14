@@ -448,6 +448,7 @@ class MMModemInterface(ServiceInterface):
 
                 ofono_ctx_interface = self.ofono_client["ofono_context"][ctx[0]]["org.ofono.ConnectionContext"]
                 ofono_ctx_interface.on_property_changed(mm_bearer_interface.ofono_context_changed)
+                ofono_ctx_interface.on_property_changed(self.context_active_changed)
                 mm_bearer_interface.ofono_ctx = ctx[0]
                 self.bus.export(f'/org/freedesktop/ModemManager/Bearer/{bearer_i}', mm_bearer_interface)
                 self.props['Bearers'].value.append(f'/org/freedesktop/ModemManager/Bearer/{bearer_i}')
@@ -511,6 +512,7 @@ class MMModemInterface(ServiceInterface):
 
             ofono_ctx_interface = self.ofono_client["ofono_context"][path]['org.ofono.ConnectionContext']
             ofono_ctx_interface.on_property_changed(mm_bearer_interface.ofono_context_changed)
+            ofono_ctx_interface.on_property_changed(self.context_active_changed)
             mm_bearer_interface.ofono_ctx = path
             self.bus.export(f'/org/freedesktop/ModemManager/Bearer/{bearer_i}', mm_bearer_interface)
             self.props['Bearers'].value.append(f'/org/freedesktop/ModemManager/Bearer/{bearer_i}')
