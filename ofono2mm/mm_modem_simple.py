@@ -51,7 +51,7 @@ class MMModemSimpleInterface(ServiceInterface):
                     self.props['state'] = Variant('u', 7) # enabled MM_MODEM_STATE_ENABLED
 
             if 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
-                if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unregisered":
+                if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unregistered":
                     self.props['m3gpp-registration-state'] = Variant('u', 0) # idle MM_MODEM_3GPP_REGISTRATION_STATE_IDLE
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "registered":
                     self.props['m3gpp-registration-state'] = Variant('u', 1) # home MM_MODEM_3GPP_REGISTRATION_STATE_HOME
