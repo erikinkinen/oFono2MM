@@ -356,7 +356,7 @@ class MMModemInterface(ServiceInterface):
                         self.props['UnlockRequired'] = Variant('u', 1) # modem is unlocked MM_MODEM_LOCK_NONE
                     else:
                         self.props['UnlockRequired'] = Variant('u', 2) # modem needs a pin MM_MODEM_LOCK_SIM_PIN
-                        self.props['State'] = Variant('i', 2)
+                        self.props['State'] = Variant('i', 3) # modem is disabled MM_MODEM_STATE_DISABLED
 
                     self.props['Sim'] = self.sim
                     self.props['StateFailedReason'] = Variant('i', 0) # no failure MM_MODEM_STATE_FAILED_REASON_NONE
