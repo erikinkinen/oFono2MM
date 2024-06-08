@@ -209,11 +209,10 @@ class MMInterface(ServiceInterface):
         self.i += 1
 
         mm_modem_simple = mm_modem_interface.get_mm_modem_simple_interface()
-        if self.apn_task != None:
-            try:
-                self.apn_task = self.loop.create_task(self.simple_set_apn(mm_modem_simple))
-            except Exception:
-                pass
+        try:
+            self.apn_task = self.loop.create_task(self.simple_set_apn(mm_modem_simple))
+        except Exception:
+            pass
 
         if read_setting('data').strip() == 'True':
             ofono2mm_print("Activating context on startup", self.verbose)
