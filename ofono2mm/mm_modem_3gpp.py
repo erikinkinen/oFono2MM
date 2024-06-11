@@ -37,7 +37,9 @@ class MMModem3gppInterface(ServiceInterface):
         old_props = self.props.copy()
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
             self.props['OperatorName'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
-            self.props['OperatorCode'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value if "MobileNetworkCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
+            MCC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileCountryCode'].value if "MobileCountryCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else ''
+            MNC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value if "MobileNetworkCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else ''
+            self.props['OperatorCode'] = Variant('s', f"{MCC}{MNC}" if MCC != '' else '')
             if 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unregistered":
                     self.props['RegistrationState'] = Variant('u', 0) # idle MM_MODEM_3GPP_REGISTRATION_STATE_IDLE
