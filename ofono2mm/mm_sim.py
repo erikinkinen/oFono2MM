@@ -52,13 +52,13 @@ class MMSimInterface(ServiceInterface):
                 self.props['IMSI'] = Variant('s', '')
 
             
-            if 'MobileCountryCode' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
-                MCC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileCountryCode'].value
+            if 'MobileCountryCode' in self.ofono_interface_props['org.ofono.SimManager']:
+                MCC = self.ofono_interface_props['org.ofono.SimManager']['MobileCountryCode'].value
             else:
                 MCC = ''
 
-            if 'MobileNetworkCode' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
-                MNC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value
+            if 'MobileNetworkCode' in self.ofono_interface_props['org.ofono.SimManager']:
+                MNC = self.ofono_interface_props['org.ofono.SimManager']['MobileNetworkCode'].value
             else:
                 MNC = ''
 
