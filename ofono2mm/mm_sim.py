@@ -50,15 +50,8 @@ class MMSimInterface(ServiceInterface):
                 self.props['IMSI'] = Variant('s', self.ofono_interface_props['org.ofono.SimManager']['SubscriberIdentity'].value)
             else:
                 self.props['IMSI'] = Variant('s', '')
-        else:
-            self.props['Active'] = Variant('b', False)
-            self.props['SimIdentifier'] = Variant('s', '')
-            self.props['IMSI'] = Variant('s', '')
 
-        if 'org.ofono.NetworkRegistration' in self.ofono_interface_props:
-            self.props['OperatorName'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['Name'].value if "Name" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
-            self.props['OperatorIdentifier'] = Variant('s', self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileNetworkCode'].value if "MobileNetworkCode" in self.ofono_interface_props['org.ofono.NetworkRegistration'] else '')
-
+            
             if 'MobileCountryCode' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 MCC = self.ofono_interface_props['org.ofono.NetworkRegistration']['MobileCountryCode'].value
             else:
@@ -69,9 +62,12 @@ class MMSimInterface(ServiceInterface):
             else:
                 MNC = ''
 
+            self.props['OperatorIdentifier'] = Variant('s', f"{MCC}{MNC}" if MCC != '' else '')
             self.props['PreferredNetworks'] = Variant('a(su)', [[f"{MCC}{MNC}", 19]])
         else:
-            self.props['OperatorName'] = Variant('s', '')
+            self.props['Active'] = Variant('b', False)
+            self.props['SimIdentifier'] = Variant('s', '')
+            self.props['IMSI'] = Variant('s', '')
             self.props['OperatorIdentifier'] = Variant('s', '')
             self.props['PreferredNetworks'] = Variant('a(su)', [])
 
