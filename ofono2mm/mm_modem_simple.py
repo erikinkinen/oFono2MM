@@ -281,15 +281,15 @@ class MMModemSimpleInterface(ServiceInterface):
             connection_settings['gsm']['password'] = f'{password}'
 
         try:
-            if self.network_manager_connection_exists(f'{apn}') == False:
+            if self.network_manager_connection_exists(f'{sim_id}') == False:
                 conn = NetworkManager.Settings.AddConnection(connection_settings)
                 ofono2mm_print(f"Connection '{conn.GetSettings()['connection']['id']}' created successfully with timestamp {current_timestamp}.", self.verbose)
             return True
         except Exception:
             return False
 
-    def network_manager_connection_exists(self, target_apn):
-        ofono2mm_print(f"Checking if Network Manager connection exists for {target_apn}", self.verbose)
+    def network_manager_connection_exists(self, target_sim_id):
+        ofono2mm_print(f"Checking if Network Manager connection exists for SIM ID {target_sim_id}", self.verbose)
 
         found = False
 
@@ -307,11 +307,11 @@ class MMModemSimpleInterface(ServiceInterface):
         for conn in connections:
             conn_settings = conn.GetSettings()
             if 'gsm' in conn_settings:
-                apn = conn_settings['gsm']['apn']
-                if apn == target_apn:
+                apn = conn_settings['gsm']['sim-id']
+                if apn == target_sim_id:
                     found = True
 
-        ofono2mm_print(f"Connection for APN {target_apn} exists: {found}", self.verbose)
+        ofono2mm_print(f"Connection for SIM ID {target_sim_id} exists: {found}", self.verbose)
         if found:
             return True
         else:
