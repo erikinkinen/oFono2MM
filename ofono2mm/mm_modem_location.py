@@ -1,14 +1,62 @@
 from datetime import datetime
+from os import seteuid, getuid
 
 import gi
 gi.require_version('Geoclue', '2.0')
-from gi.repository import Geoclue
+from gi.repository import Gio, GLib, GObject, Geoclue
 
 from dbus_next.service import ServiceInterface, method, dbus_property
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError
 
 from ofono2mm.logging import ofono2mm_print
+
+simple = None
+main_loop = None
+location_data = None
+
+def on_simple_ready(source_object, result, user_data):
+    global simple, main_loop, location_data
+    simple = Geoclue.Simple.new_with_thresholds_finish(result)
+
+    location = simple.get_location()
+    longitude = location.get_property('longitude')
+    latitude = location.get_property('latitude')
+    altitude = location.get_property('altitude')
+
+    location_data = (latitude, longitude, altitude)
+
+    if main_loop:
+        main_loop.quit()
+
+def geoclue_get_location():
+    global simple, main_loop, location_data
+
+    def on_timeout(user_data):
+        global simple, main_loop
+        if simple:
+            simple = None
+        if main_loop:
+            main_loop.quit()
+        return False
+
+    seteuid(32011)
+
+    GLib.timeout_add_seconds(30, on_timeout, None)
+
+    Geoclue.Simple.new_with_thresholds("ModemManager", Geoclue.AccuracyLevel.EXACT, 0, 0, None, on_simple_ready, None)
+
+    main_loop = GLib.MainLoop()
+    main_loop.run()
+
+    if getuid() == 0:
+        seteuid(0)
+
+    if location_data:
+        latitude, longitude, altitude = location_data
+        return latitude, longitude, altitude
+    else:
+        raise Exception("Failed to get location data.")
 
 class MMModemLocationInterface(ServiceInterface):
     def __init__(self, verbose=False):
@@ -18,7 +66,7 @@ class MMModemLocationInterface(ServiceInterface):
         utc_time = datetime.utcnow().isoformat()
 
         self.location = {
-            2: Variant('a{sv}', {
+            2: Variant('a{sv}', { # 2 is MM_MODEM_LOCATION_SOURCE_GPS_RAW
                 'utc-time': Variant('s', utc_time),
                 'latitude': Variant('d', 0),
                 'longitude': Variant('d', 0),
@@ -46,23 +94,23 @@ class MMModemLocationInterface(ServiceInterface):
     async def GetLocation(self) -> 'a{uv}':
         ofono2mm_print("Returning current location", self.verbose)
 
-        geoclue = Geoclue.Simple.new_sync('ModemManager', Geoclue.AccuracyLevel.NEIGHBORHOOD, None)
-        location = geoclue.get_location()
+        try:
+            latitude, longitude, altitude = geoclue_get_location()
+        except Exception as e:
+            ofono2mm_print(f"Failed to get location from geoclue: {e}", self.verbose)
+            longitude = 0
+            latitude = 0
+            altitude = 0
 
-        # geoclue has issues, it returns lat and long in place of each other
-        longitude = location.get_property('latitude')
-        latitude = location.get_property('longitude')
-        altitude = location.get_property('altitude')
         utc_time = datetime.utcnow().isoformat()
 
-        self.location = {
-            2: Variant('a{sv}', { # 2 is MM_MODEM_LOCATION_SOURCE_GPS_RAW
-                'utc-time': Variant('s', utc_time),
-                'latitude': Variant('d', latitude),
-                'longitude': Variant('d', longitude),
-                'altitude': Variant('d', altitude)
-            })
-        }
+        ofono2mm_print(f"Location is longitude: {longitude}, latitude: {latitude}, altitude: {altitude}", self.verbose)
+
+        location_variant = self.location[2].value
+        location_variant['utc-time'] = Variant('s', utc_time)
+        location_variant['latitude'] = Variant('d', latitude)
+        location_variant['longitude'] = Variant('d', longitude)
+        location_variant['altitude'] = Variant('d', altitude)
 
         return self.location
 
