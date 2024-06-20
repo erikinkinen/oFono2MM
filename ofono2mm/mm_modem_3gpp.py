@@ -118,7 +118,7 @@ class MMModem3gppInterface(ServiceInterface):
 
     @method()
     async def Register(self, operator_id: 's'):
-        ofono2mm_print(f"Register with operator id {operator_id}", self.verbose)
+        ofono2mm_print(f"Register with operator id '{operator_id}'", self.verbose)
 
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
             if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unknown":
@@ -131,7 +131,7 @@ class MMModem3gppInterface(ServiceInterface):
                 try:
                     await self.ofono_interfaces['org.ofono.NetworkRegistration'].call_register()
                 except DBusError:
-                    ofono2mm_print(f"Failed to register to operator_id {operator_id}", self.verbose)
+                    ofono2mm_print(f"Failed to register to default operator", self.verbose)
             return
         try:
             ofono_operator_interface = self.ofono_client["ofono_operator"][f"{self.modem_name}/operator/{operator_id}"]['org.ofono.NetworkOperator']
@@ -164,7 +164,7 @@ class MMModem3gppInterface(ServiceInterface):
             for tech in ofono_operator[1]['Technologies'].value:
                 if tech == "nr":
                     current_tech |= 1 << 15
-                if tech == "lte":
+                elif tech == "lte":
                     current_tech |= 1 << 14
                 elif tech == "umts":
                     current_tech |= 1 << 5

@@ -212,7 +212,7 @@ class MMBearerInterface(ServiceInterface):
         await ofono_ctx_interface.call_set_property("Active", Variant('b', False))
 
     async def add_auth_ofono(self, username, password):
-        ofono2mm_print(f"Add authentication to oFono with username {username} and password {password}", self.verbose)
+        ofono2mm_print(f"Add authentication to oFono with username '{username}' and password '{password}'", self.verbose)
 
         ofono_ctx_interface = self.ofono_client["ofono_context"][self.ofono_ctx]['org.ofono.ConnectionContext']
         try:

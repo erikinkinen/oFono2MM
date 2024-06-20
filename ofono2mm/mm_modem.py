@@ -112,42 +112,23 @@ class MMModemInterface(ServiceInterface):
         await self.check_ofono_contexts()
 
     async def add_ofono_interface(self, iface):
-        if iface == "org.ofono.CallSettings":
-            ofono2mm_print("Interface is org.ofono.CallSettings which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.CallVolume":
-            ofono2mm_print("Interface is org.ofono.CallVolume which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.SimToolkit":
-            ofono2mm_print("Interface is org.ofono.SimToolkit which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.Phonebook":
-            ofono2mm_print("Interface is org.ofono.Phonebook which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.SmartMessaging":
-            ofono2mm_print("Interface is org.ofono.SmartMessaging which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.PushNotification":
-            ofono2mm_print("Interface is org.ofono.PushNotification which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.CallBarring":
-            ofono2mm_print("Interface is org.ofono.CallBarring which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.CallForwarding":
-            ofono2mm_print("Interface is org.ofono.CallForwarding which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.MessageWaiting":
-            ofono2mm_print("Interface is org.ofono.MessageWaiting which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.ofono.AllowedAccessPoints":
-            ofono2mm_print("Interface is org.ofono.AllowedAccessPoints which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.nemomobile.ofono.CellInfo":
-            ofono2mm_print("Interface is org.nemomobile.ofono.CellInfo which is unused, skipping", self.verbose)
-            return
-        elif iface == "org.nemomobile.ofono.SimInfo":
-            ofono2mm_print("Interface is org.nemomobile.ofono.CellInfo which is unused, skipping", self.verbose)
-            return
+        unused_interfaces = {
+            "org.ofono.CallSettings",
+            "org.ofono.CallVolume",
+            "org.ofono.SimToolkit",
+            "org.ofono.Phonebook",
+            "org.ofono.SmartMessaging",
+            "org.ofono.PushNotification",
+            "org.ofono.CallBarring",
+            "org.ofono.CallForwarding",
+            "org.ofono.MessageWaiting",
+            "org.ofono.AllowedAccessPoints",
+            "org.nemomobile.ofono.CellInfo",
+            "org.nemomobile.ofono.SimInfo"
+        }
+
+        if iface in unused_interfaces:
+            ofono2mm_print(f"Interface is {iface} which is unused, skipping", self.verbose)
         else:
             ofono2mm_print(f"Add oFono interface for iface {iface}", self.verbose)
 
@@ -577,92 +558,42 @@ class MMModemInterface(ServiceInterface):
             self.props['OwnNumbers'] = Variant('as', self.ofono_interface_props['org.ofono.SimManager']['SubscriberNumbers'].value if 'SubscriberNumbers' in self.ofono_interface_props['org.ofono.SimManager'] else [])
 
             if 'Retries' in self.ofono_interface_props['org.ofono.SimManager']:
+                unlock_retries = {}
                 if 'pin' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    pin = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin']
-                else:
-                    pin = -1
+                    unlock_retries[2] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin'] # MM_MODEM_LOCK_SIM_PIN
 
                 if 'pin2' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    pin2 = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin2']
-                else:
-                    pin2 = -1
+                    unlock_retries[3] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin2'] # MM_MODEM_LOCK_SIM_PIN2
 
                 if 'puk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    puk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk']
-                else:
-                    puk = -1
+                    unlock_retries[4] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk'] # MM_MODEM_LOCK_SIM_PUK
 
                 if 'puk2' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    puk2 = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk2']
-                else:
-                    puk2 = -1
+                    unlock_retries[5] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk2'] # MM_MODEM_LOCK_SIM_PUK2
 
                 if 'service' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    service = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['service']
-                else:
-                    service = -1
+                    unlock_retries[6] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['service'] # MM_MODEM_LOCK_PH_SP_PIN
 
                 if 'servicepuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    servicepuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['servicepuk']
-                else:
-                    servicepuk = -1
+                    unlock_retries[7] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['servicepuk'] # MM_MODEM_LOCK_PH_SP_PUK
 
                 if 'network' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    network = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['network']
-                else:
-                    network = -1
+                    unlock_retries[8] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['network'] # MM_MODEM_LOCK_PH_NET_PIN
 
                 if 'networkpuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    networkpuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['networkpuk']
-                else:
-                    networkpuk = -1
+                    unlock_retries[9] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['networkpuk'] # MM_MODEM_LOCK_PH_NET_PUK
 
                 if 'corp' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    corp = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corp']
-                else:
-                    corp = -1
+                    unlock_retries[11] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corp'] # MM_MODEM_LOCK_PH_CORP_PIN
 
                 if 'corppuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    corppuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corppuk']
-                else:
-                    corppuk = -1
+                    unlock_retries[12] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corppuk'] # MM_MODEM_LOCK_PH_CORP_PUK
 
                 if 'netsub' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    netsub = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsub']
-                else:
-                    netsub = -1
+                    unlock_retries[15] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsub'] # MM_MODEM_LOCK_PH_NETSUB_PIN
 
                 if 'netsubpuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    netsubpuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsubpuk']
-                else:
-                    netsubpuk = -1
-
-                unlock_retries = {}
-
-                if pin != -1:
-                    unlock_retries[2] = pin # MM_MODEM_LOCK_SIM_PIN
-                if pin2 != -1:
-                    unlock_retries[3] = pin2 # MM_MODEM_LOCK_SIM_PIN2
-                if puk != -1:
-                    unlock_retries[4] = puk # MM_MODEM_LOCK_SIM_PUK
-                if puk2 != -1:
-                    unlock_retries[5] = puk2 # MM_MODEM_LOCK_SIM_PUK2
-                if service != -1:
-                    unlock_retries[6] = service # MM_MODEM_LOCK_PH_SP_PIN
-                if servicepuk != -1:
-                    unlock_retries[7] = servicepuk # MM_MODEM_LOCK_PH_SP_PUK
-                if network != -1:
-                    unlock_retries[8] = network # MM_MODEM_LOCK_PH_NET_PIN
-                if networkpuk != -1:
-                    unlock_retries[9] = networkpuk # MM_MODEM_LOCK_PH_NET_PUK
-                if corp != -1:
-                    unlock_retries[11] = corp # MM_MODEM_LOCK_PH_CORP_PIN
-                if corppuk != -1:
-                    unlock_retries[12] = corppuk # MM_MODEM_LOCK_PH_CORP_PUK
-                if netsub != -1:
-                    unlock_retries[15] = netsub # MM_MODEM_LOCK_PH_NETSUB_PIN
-                if netsubpuk != -1:
-                    unlock_retries[16] = netsubpuk # MM_MODEM_LOCK_PH_NETSUB_PUK
+                    unlock_retries[16] = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsubpuk'] # MM_MODEM_LOCK_PH_NETSUB_PUK
             else:
                 unlock_retries = {}
 

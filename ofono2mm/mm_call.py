@@ -76,12 +76,12 @@ class MMCallInterface(ServiceInterface):
 
     @method()
     async def SendDtmf(self, dtmf: 's'):
-        ofono2mm_print("Send dtmf {dtmf}", self.verbose)
+        ofono2mm_print(f"Send dtmf {dtmf}", self.verbose)
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_send_tones(dtmf)
 
     @signal()
     def DtmfReceived(self, dtmf) -> 's':
-        ofono2mm_print("Dtmf {dtmf} received", self.verbose)
+        ofono2mm_print(f"Dtmf {dtmf} received", self.verbose)
         return dtmf
 
     @signal()

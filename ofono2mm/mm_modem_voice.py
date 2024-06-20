@@ -98,36 +98,9 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        if 'org.ofono.ConnectionManager' in self.ofono_interfaces:
-            contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
-            self.context_names = []
-            ctx_idx = 0
-            chosen_apn = None
-            chosen_ctx_path = None
-            for ctx in contexts:
-                name = ctx[1].get('Type', Variant('s', '')).value
-                access_point_name = ctx[1].get('AccessPointName', Variant('s', '')).value
-                if name.lower() == "internet":
-                    ctx_idx += 1
-                    if access_point_name:
-                        self.context_names.append(access_point_name)
-                        chosen_apn = access_point_name
-                        chosen_ctx_path = ctx[0]
-
-                if chosen_ctx_path:
-                    # print(f'activate context on apn {chosen_apn}')
-                    chosen_ctx_interface = self.ofono_client["ofono_context"][chosen_ctx_path]['org.ofono.ConnectionContext']
-                    # on some carriers context does not get reactivated after a call automatically, lets do it ourselves just in case
-                    sleep(2) # wait a bit for the call to end
-                    try:
-                        await chosen_ctx_interface.call_set_property("Active", Variant('b', True))
-                    except Exception as e:
-                        pass
-
     @method()
     async def ListCalls(self) -> 'ao':
         ofono2mm_print("Returning list of calls", self.verbose)
-
         return self.props['Calls'].value
 
     @method()
