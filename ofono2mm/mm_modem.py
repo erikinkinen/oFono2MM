@@ -64,6 +64,22 @@ class MMModemInterface(ServiceInterface):
         self.selected_current_mode = []
         self.sim = Variant('o', f'/org/freedesktop/ModemManager/SIM/{self.index}')
         self.bearers = {}
+
+        self.unused_interfaces = {
+            "org.ofono.CallSettings",
+            "org.ofono.CallVolume",
+            "org.ofono.SimToolkit",
+            "org.ofono.Phonebook",
+            "org.ofono.SmartMessaging",
+            "org.ofono.PushNotification",
+            "org.ofono.CallBarring",
+            "org.ofono.CallForwarding",
+            "org.ofono.MessageWaiting",
+            "org.ofono.AllowedAccessPoints",
+            "org.nemomobile.ofono.CellInfo",
+            "org.nemomobile.ofono.SimInfo"
+        }
+
         self.props = {
             'Sim': Variant('o', '/'),
             'SimSlots': Variant('ao', [f'/org/freedesktop/ModemManager/SIM/{self.index}']),
@@ -112,22 +128,7 @@ class MMModemInterface(ServiceInterface):
         await self.check_ofono_contexts()
 
     async def add_ofono_interface(self, iface):
-        unused_interfaces = {
-            "org.ofono.CallSettings",
-            "org.ofono.CallVolume",
-            "org.ofono.SimToolkit",
-            "org.ofono.Phonebook",
-            "org.ofono.SmartMessaging",
-            "org.ofono.PushNotification",
-            "org.ofono.CallBarring",
-            "org.ofono.CallForwarding",
-            "org.ofono.MessageWaiting",
-            "org.ofono.AllowedAccessPoints",
-            "org.nemomobile.ofono.CellInfo",
-            "org.nemomobile.ofono.SimInfo"
-        }
-
-        if iface in unused_interfaces:
+        if iface in self.unused_interfaces:
             ofono2mm_print(f"Interface is {iface} which is unused, skipping", self.verbose)
         else:
             ofono2mm_print(f"Add oFono interface for iface {iface}", self.verbose)
@@ -1185,10 +1186,14 @@ class MMModemInterface(ServiceInterface):
         self.ofono_props[name] = varval
         if name == "Interfaces":
             for iface in varval.value:
-                if not (iface in self.ofono_interfaces):
-                    self.loop.create_task(self.add_ofono_interface(iface))
+                if iface not in self.ofono_interfaces:
+                    if iface in self.unused_interfaces:
+                        ofono2mm_print(f"Interface {iface} is unused. skipping", self.verbose)
+                    else:
+                        ofono2mm_print(f"Interface {iface} was just exported, adding to the interface list", self.verbose)
+                        self.loop.create_task(self.add_ofono_interface(iface))
             for iface in self.ofono_interfaces:
-                if not (iface in varval.value):
+                if iface not in varval.value:
                     self.loop.create_task(self.remove_ofono_interface(iface))
 
         self.set_props()
