@@ -126,7 +126,7 @@ class MMModemInterface(ServiceInterface):
         for iface in self.ofono_props['Interfaces'].value:
             await self.add_ofono_interface(iface)
 
-        await self.check_ofono_contexts()
+        self.loop.create_task(self.init_connection_manager())
 
     async def add_ofono_interface(self, iface):
         if iface in self.unused_interfaces:
@@ -194,9 +194,6 @@ class MMModemInterface(ServiceInterface):
         if self.mm_modem_signal_interface and iface == "org.ofono.NetworkMonitor":
             self.mm_modem_signal_interface.set_props()
 
-        if iface == "org.ofono.ConnectionManager":
-            await self.check_ofono_contexts()
-
     async def remove_ofono_interface(self, iface):
         ofono2mm_print(f"Remove oFono interface for iface {iface}", self.verbose)
 
@@ -225,6 +222,44 @@ class MMModemInterface(ServiceInterface):
         if self.mm_modem_signal_interface:
             self.mm_modem_signal_interface.ofono_interface_props = self.ofono_interface_props.copy()
             self.mm_modem_signal_interface.set_props()
+
+    async def init_connection_manager(self):
+        while True:
+            ofono2mm_print("Waiting for oFono connection manager to appear", self.verbose)
+            if 'org.ofono.ConnectionManager' in self.ofono_interfaces:
+                ofono2mm_print("oFono connection manager appeared, initializing check ofono contexts", self.verbose)
+                await self.check_ofono_contexts()
+                return
+            await asyncio.sleep(2)
+
+    async def init_network_time(self):
+        while True:
+            ofono2mm_print("Waiting for oFono network time to appear", self.verbose)
+            if 'org.ofono.NetworkTime' in self.ofono_interfaces:
+                ofono2mm_print("oFono network time appeared, initializing time interface", self.verbose)
+                await self.mm_modem_time_interface.init_time()
+                return
+            await asyncio.sleep(2)
+
+    async def init_message_manager(self):
+        while True:
+            ofono2mm_print("Waiting for oFono message manager to appear", self.verbose)
+            if 'org.ofono.MessageManager' in self.ofono_interfaces:
+                ofono2mm_print("oFono message manager appeared, initializing time interface", self.verbose)
+                self.mm_modem_messaging_interface.set_props()
+                await self.mm_modem_messaging_interface.init_messages()
+                return
+            await asyncio.sleep(2)
+
+    async def init_voice_call_manager(self):
+        while True:
+            ofono2mm_print("Waiting for oFono voice call manager to appear", self.verbose)
+            if 'org.ofono.VoiceCallManager' in self.ofono_interfaces:
+                ofono2mm_print("oFono voice call manager appeared, initializing time interface", self.verbose)
+                self.mm_modem_voice_interface.set_props()
+                await self.mm_modem_voice_interface.init_calls()
+                return
+            await asyncio.sleep(2)
 
     async def init_mm_sim_interface(self):
         ofono2mm_print("Initialize SIM interface", self.verbose)
@@ -274,8 +309,7 @@ class MMModemInterface(ServiceInterface):
         self.mm_modem_time_interface = MMModemTimeInterface(self.ofono_client, self.modem_name, self.ofono_interfaces, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_time_interface)
 
-        if 'org.ofono.NetworkTime' in self.ofono_interfaces:
-            await self.mm_modem_time_interface.init_time()
+        self.loop.create_task(self.init_network_time())
 
     async def init_mm_cdma_interface(self):
         ofono2mm_print("Initialize CDMA interface", self.verbose)
@@ -314,9 +348,7 @@ class MMModemInterface(ServiceInterface):
         self.mm_modem_voice_interface = MMModemVoiceInterface(self.bus, self.ofono_client, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_voice_interface)
 
-        if 'org.ofono.VoiceCallManager' in self.ofono_interfaces:
-            self.mm_modem_voice_interface.set_props()
-            await self.mm_modem_voice_interface.init_calls()
+        self.loop.create_task(self.init_voice_call_manager())
 
     async def init_mm_messaging_interface(self):
         ofono2mm_print("Initialize Messaging interface", self.verbose)
@@ -324,9 +356,7 @@ class MMModemInterface(ServiceInterface):
         self.mm_modem_messaging_interface = MMModemMessagingInterface(self.bus, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_messaging_interface)
 
-        if 'org.ofono.MessageManager' in self.ofono_interfaces:
-            self.mm_modem_messaging_interface.set_props()
-            await self.mm_modem_messaging_interface.init_messages()
+        self.loop.create_task(self.init_message_manager())
 
     def unexport_mm_interface_objects(self):
         self.mm_sim_interface = None
