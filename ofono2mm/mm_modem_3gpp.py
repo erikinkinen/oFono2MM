@@ -252,6 +252,9 @@ class MMModem3gppInterface(ServiceInterface):
         self.ofono_props[name] = varval
         asyncio.create_task(self.set_props())
 
+    def ofono_client_changed(self, ofono_client):
+        self.ofono_client = ofono_client
+
     def ofono_interface_changed(self, iface):
         def ch(name, varval):
             if iface in self.ofono_interface_props:

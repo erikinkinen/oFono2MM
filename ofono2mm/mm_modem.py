@@ -20,6 +20,7 @@ from ofono2mm.mm_bearer import MMBearerInterface
 from ofono2mm.mm_modem_voice import MMModemVoiceInterface
 from ofono2mm.logging import ofono2mm_print
 from ofono2mm.utils import read_setting, save_setting
+from ofono2mm.ofono import Ofono, DBus
 
 import asyncio
 from glob import glob
@@ -1182,7 +1183,7 @@ class MMModemInterface(ServiceInterface):
             ofono2mm_print(f"Failed to activate internet context: {e}", self.verbose)
             return False
 
-    def ofono_changed(self, name, varval):
+    async def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval
         if name == "Interfaces":
             for iface in varval.value:
@@ -1195,6 +1196,58 @@ class MMModemInterface(ServiceInterface):
             for iface in self.ofono_interfaces:
                 if iface not in varval.value:
                     self.loop.create_task(self.remove_ofono_interface(iface))
+
+            try:
+                ofono_client = Ofono(self.bus)
+                ofono_manager_interface = ofono_client["ofono"]["/"]["org.ofono.Manager"]
+                modems = await ofono_manager_interface.call_get_modems()
+                filtered_modem = [modem for modem in modems if modem[0] == f'/ril_{self.index}']
+
+                new_interface_names = []
+                old_interface_names = []
+                if filtered_modem:
+                    new_interface_names = filtered_modem[0][1]['Interfaces'].value
+                    new_interface_names.sort()
+
+                old_interface_names = [interface for interface in self.ofono_interfaces]
+                old_interface_names.sort()
+
+                if old_interface_names and new_interface_names and old_interface_names != new_interface_names:
+                    # ofono2mm_print(f"Interface list differs, old list is {old_interface_names}, new list is {new_interface_names}", self.verbose)
+                    old_set = set(old_interface_names)
+                    new_set = set(new_interface_names)
+                    added_interfaces = new_set - old_set - self.unused_interfaces
+                    removed_interfaces = old_set - new_set - self.unused_interfaces
+
+                    if added_interfaces:
+                        ofono2mm_print(f"Added interfaces: {added_interfaces}", self.verbose)
+                        for iface in added_interfaces:
+                            self.loop.create_task(self.add_ofono_interface(iface))
+
+                    if removed_interfaces:
+                        ofono2mm_print(f"Removed interfaces: {removed_interfaces}", self.verbose)
+                        for iface in removed_interfaces:
+                            self.loop.create_task(self.remove_ofono_interface(iface))
+
+                ofono2mm_print("Updating ofono_client object in all interfaces", self.verbose)
+                self.ofono_client = ofono_client
+                if self.mm_modem3gpp_interface:
+                    self.mm_modem3gpp_interface.ofono_client_changed(self.ofono_client)
+                if self.mm_sim_interface:
+                    self.mm_sim_interface.ofono_client_changed(self.ofono_client)
+                if self.mm_modem_voice_interface:
+                    self.mm_modem_voice_interface.ofono_client_changed(self.ofono_client)
+                if self.mm_modem_messaging_interface:
+                    self.mm_modem_messaging_interface.ofono_client_changed(self.ofono_client)
+                if self.mm_modem_simple_interface:
+                    self.mm_modem_simple_interface.ofono_client_changed(self.ofono_client)
+                if self.mm_modem_signal_interface:
+                    self.mm_modem_signal_interface.ofono_client_changed(self.ofono_client)
+                for bearer_interface in self.mm_bearer_interfaces:
+                    if bearer_interface:
+                        bearer_interface.ofono_client_changed(self.ofono_client)
+            except Exception as e:
+                ofono2mm_print(f"Failed to check for interface changes: {e}", self.verbose)
 
         self.set_props()
         if self.mm_modem3gpp_interface:
@@ -1209,6 +1262,9 @@ class MMModemInterface(ServiceInterface):
             self.mm_modem_simple_interface.ofono_changed(name, varval)
         if self.mm_modem_signal_interface:
             self.mm_modem_signal_interface.ofono_changed(name, varval)
+        for bearer_interface in self.mm_bearer_interfaces:
+            if bearer_interface:
+                bearer_interface.ofono_changed(name, varval)
 
     def ofono_interface_changed(self, iface):
         def ch(name, varval):
@@ -1227,5 +1283,4 @@ class MMModemInterface(ServiceInterface):
                     self.mm_modem_simple_interface.ofono_interface_changed(iface)(name, varval)
                 if self.mm_modem_signal_interface:
                     self.mm_modem_signal_interface.ofono_interface_changed(iface)(name, varval)
-
         return ch

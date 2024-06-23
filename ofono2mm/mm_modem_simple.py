@@ -321,11 +321,13 @@ class MMModemSimpleInterface(ServiceInterface):
         self.ofono_props[name] = varval
         self.set_props()
 
+    def ofono_client_changed(self, ofono_client):
+        self.ofono_client = ofono_client
+
     def ofono_interface_changed(self, iface):
         def ch(name, varval):
             if iface in self.ofono_interface_props:
                 self.ofono_interface_props[iface][name] = varval
-
             self.set_props()
 
         return ch
