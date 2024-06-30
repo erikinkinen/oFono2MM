@@ -230,7 +230,7 @@ class MMModemInterface(ServiceInterface):
                 ofono2mm_print("oFono connection manager appeared, initializing check ofono contexts", self.verbose)
                 await self.check_ofono_contexts()
                 return
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.3)
 
     async def init_network_time(self):
         while True:
@@ -239,7 +239,7 @@ class MMModemInterface(ServiceInterface):
                 ofono2mm_print("oFono network time appeared, initializing time interface", self.verbose)
                 await self.mm_modem_time_interface.init_time()
                 return
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.3)
 
     async def init_message_manager(self):
         while True:
@@ -249,7 +249,7 @@ class MMModemInterface(ServiceInterface):
                 self.mm_modem_messaging_interface.set_props()
                 await self.mm_modem_messaging_interface.init_messages()
                 return
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.3)
 
     async def init_voice_call_manager(self):
         while True:
@@ -259,7 +259,7 @@ class MMModemInterface(ServiceInterface):
                 self.mm_modem_voice_interface.set_props()
                 await self.mm_modem_voice_interface.init_calls()
                 return
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.3)
 
     async def init_mm_sim_interface(self):
         ofono2mm_print("Initialize SIM interface", self.verbose)
@@ -404,7 +404,7 @@ class MMModemInterface(ServiceInterface):
                         except Exception as e:
                             ofono2mm_print(f"Failed to activate context: {e}", self.verbose)
 
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(0.3)
 
     async def check_ofono_contexts(self):
         ofono2mm_print("Checking ofono contexts", self.verbose)
