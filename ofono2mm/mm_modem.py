@@ -192,7 +192,7 @@ class MMModemInterface(ServiceInterface):
         if self.mm_modem_simple_interface:
             self.mm_modem_simple_interface.set_props()
         if self.mm_modem_signal_interface and iface == "org.ofono.NetworkMonitor":
-            self.mm_modem_signal_interface.set_props()
+            await self.mm_modem_signal_interface.set_props()
 
     async def remove_ofono_interface(self, iface):
         ofono2mm_print(f"Remove oFono interface for iface {iface}", self.verbose)
@@ -221,7 +221,7 @@ class MMModemInterface(ServiceInterface):
             self.mm_modem_simple_interface.set_props()
         if self.mm_modem_signal_interface:
             self.mm_modem_signal_interface.ofono_interface_props = self.ofono_interface_props.copy()
-            self.mm_modem_signal_interface.set_props()
+            await self.mm_modem_signal_interface.set_props()
 
     async def init_connection_manager(self):
         while True:
@@ -332,9 +332,9 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_signal_interface(self):
         ofono2mm_print("Initialize Signal interface", self.verbose)
 
-        self.mm_modem_signal_interface = MMModemSignalInterface(self.ofono_props, self.ofono_interface_props, self.verbose)
+        self.mm_modem_signal_interface = MMModemSignalInterface(self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_signal_interface)
-        self.mm_modem_signal_interface.set_props()
+        await self.mm_modem_signal_interface.set_props()
 
     async def init_mm_location_interface(self):
         ofono2mm_print("Initialize Location interface", self.verbose)
