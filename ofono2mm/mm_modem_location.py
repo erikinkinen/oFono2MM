@@ -1,5 +1,6 @@
 from datetime import datetime
 from os import seteuid, getuid
+import asyncio
 
 import gi
 gi.require_version('Geoclue', '2.0')
@@ -84,6 +85,10 @@ class MMModemLocationInterface(ServiceInterface):
             'GpsRefreshRate': Variant('u', 0)
         }
 
+    async def async_geoclue_get_location(self):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, geoclue_get_location)
+
     @method()
     def Setup(self, sources: 'u', signal_location: 'b') -> None:
         ofono2mm_print(f"Setup location with source flag {sources} and signal location {signal_location}", self.verbose)
@@ -95,7 +100,7 @@ class MMModemLocationInterface(ServiceInterface):
         ofono2mm_print("Returning current location", self.verbose)
 
         try:
-            latitude, longitude, altitude = geoclue_get_location()
+            latitude, longitude, altitude = await async_geoclue_get_location()
         except Exception as e:
             ofono2mm_print(f"Failed to get location from geoclue: {e}", self.verbose)
             longitude = 0
