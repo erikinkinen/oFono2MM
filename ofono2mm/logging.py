@@ -1,5 +1,5 @@
 from inspect import currentframe
-import time
+from time import time
 
 def ofono2mm_print(message, verbose):
     if not verbose:
@@ -15,4 +15,4 @@ def ofono2mm_print(message, verbose):
         func_name = caller_frame.f_code.co_name
         full_message = f"{func_name}: {message}"
 
-    print(time.time(), full_message)
+    print(time(), full_message)
