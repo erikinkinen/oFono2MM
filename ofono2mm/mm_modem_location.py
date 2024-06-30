@@ -1,5 +1,6 @@
 from datetime import datetime
-from os import seteuid, getuid
+from os import seteuid, getuid, chown, makedirs
+from os.path import join
 import asyncio
 
 import gi
@@ -65,6 +66,10 @@ class MMModemLocationInterface(ServiceInterface):
         ofono2mm_print("Initializing Location interface", verbose)
         self.verbose = verbose
         utc_time = datetime.utcnow().isoformat()
+        self.config_dir = '/etc/geoclue/conf.d'
+        self.config_path = join(self.config_dir, 'supl.conf')
+        self.owner_uid = 32011
+        self.owner_gid = 32011
 
         self.location = {
             2: Variant('a{sv}', { # 2 is MM_MODEM_LOCATION_SOURCE_GPS_RAW
@@ -120,8 +125,28 @@ class MMModemLocationInterface(ServiceInterface):
         return self.location
 
     @method()
-    def SetSuplServer(self, supl: 's') -> None:
-        raise DBusError('org.freedesktop.ModemManager1.Error.Core.Unsupported', 'Cannot set SUPL server: A-GPS not supported')
+    def SetSuplServer(self, supl: 's'):
+        try:
+            makedirs(self.config_dir, exist_ok=True)
+        except OSError as e:
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.Failed', f'Failed to create configuration directory: {e}')
+
+        config_content = f"""[hybris]
+supl-enabled=true
+supl-server={supl}
+"""
+        try:
+            with open(self.config_path, 'w') as config_file:
+                config_file.write(config_content)
+        except IOError as e:
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.Failed', f'Failed to write SUPL server configuration: {e}')
+
+        try:
+            chown(self.config_dir, self.owner_uid, self.owner_gid)
+        except OSError as e:
+            raise DBusError('org.freedesktop.ModemManager1.Error.Core.Failed', f'Failed to change ownership of configuration directory: {e}')
+
+        self.props['SuplServer'] = Variant('s', supl)
 
     @method()
     def InjectAssistanceData(self, data: 'ay') -> None:
