@@ -255,7 +255,7 @@ class MMBearerInterface(ServiceInterface):
 
     def ofono_changed(self, name, varval):
         self.ofono_props[name] = varval
-        self.set_props()
+        asyncio.create_task(self.set_props())
 
     def ofono_client_changed(self, ofono_client):
         self.ofono_client = ofono_client
