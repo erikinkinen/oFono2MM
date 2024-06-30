@@ -1,16 +1,66 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ofono2mm
-Source: https://github.com/droidian/oFono2MM
+Source: https://github.com/furilabs/oFono2MM
 
-Files: *
+Files: main.py ofono2mm/__init__.py ofono2mm/mm_bearer.py ofono2mm/mm_modem_3gpp.py ofono2mm/mm_modem_messaging.py ofono2mm/mm_modem.py ofono2mm/mm_modem_simple.py ofono2mm/mm_sim.py ofono2mm/mm_sms.py ofono2mm/ofono.py ofono2mm/ofono.py
 Copyright: 2023 Erik Inkinen <erik.inkinen@gmail.com>
            2023 Bardia Moshiri <fakeshell@bardia.tech>
-           2023 Droidian Project <info@droidian.org>
 License: BSD-3-clause
+
+Files: Makefile ofono2mm/logging.py ofono2mm/mm_call.py ofono2mm/mm_modem_3gpp_profile_manager.py ofono2mm/mm_modem_3gpp_ussd.py ofono2mm/mm_modem_cdma.py ofono2mm/mm_modem_firmware.py ofono2mm/mm_modem_location.py ofono2mm/mm_modem_oma.py ofono2mm/mm_modem_sar.py ofono2mm/mm_modem_signal.py ofono2mm/mm_modem_time.py ofono2mm/mm_modem_voice.py
+Copyright: 2024 Bardia Moshiri <fakeshell@bardia.tech>
+           2024 Jesús Higueras <jesus@dabbleam.com>
+License: GPL-2.0
+
+Files: examples/*
+Copyright: 2011 - 2013 Aleksander Morgado <aleksander@aleksander.es>
+           2008 - 2009 Novell, Inc.
+           2009 - 2012 Red Hat, Inc.
+           2011 - 2012 Google, Inc.
+License: GPL-2.0+
 
 Files: debian/*
 Copyright: 2021 Erik Inkinen <erik.inkinen@gmail.com>
+           2024 Bardia Moshiri <fakeshell@bardia.tech>
 License: BSD-3-clause
+
+Files: ofonoctl/*
+Copyright: 2020 Martijn Braam <martijn@brixit.nl>
+           2024 Bardia Moshiri <fakeshell@bardia.tech>
+License: MIT
+
+License: GPL-2.0+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: GPL-2.0
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of version 2 of the GNU General Public License
+ as published by the Free Software Foundation.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
 License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without
@@ -35,3 +85,21 @@ License: BSD-3-clause
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.

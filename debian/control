@@ -1,13 +1,13 @@
 Source: ofono2mm
-Maintainer: Erik Inkinen <erik.inkinen@gmail.com>
+Maintainer: Bardia Moshiri <fakeshell@bardia.tech>
 Section: misc
 Priority: optional
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3
 Standards-Version: 4.5.0.3
-Vcs-Browser: https://github.com/droidian/oFono2MM
-Vcs-Git: https://github.com/droidian/oFono2MM.git
+Vcs-Browser: https://github.com/furilabs/oFono2MM
+Vcs-Git: https://github.com/furilabs/oFono2MM.git
 
 Package: ofono2mm
 Architecture: all
@@ -21,7 +21,7 @@ Depends: ${misc:Depends},
          gir1.2-modemmanager-1.0,
          python3-networkmanager,
          python3-dbus
-Description: A simple python script implementing ModemManager DBus API and using ofono to manage the modem
+Description: A python daemon implementing ModemManager DBus API and using ofono to manage the modem
 
 Package: ofonoctl
 Architecture: all
