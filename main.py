@@ -108,7 +108,7 @@ class MMInterface(ServiceInterface):
 
                 if not self.ofono_modem_list:
                     ofono2mm_print("No modems available, retrying", self.verbose)
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(0.3)
                     continue
 
                 for modem in self.ofono_modem_list:
@@ -125,7 +125,6 @@ class MMInterface(ServiceInterface):
                         except DBusError as e:
                             ofono2mm_print(f"Error setting modem {modem[0]} to online: {e}", self.verbose)
                             self.ofono_modem_list = False
-                            await asyncio.sleep(0.5)
             except DBusError as e:
                 ofono2mm_print(f"Failed to get the current modem: {e}", self.verbose)
                 self.ofono_modem_list = False
@@ -190,20 +189,23 @@ class MMInterface(ServiceInterface):
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.i}', mm_modem_interface)
         self.modem_added_block = False
         mm_modem_interface.set_props()
-        await mm_modem_interface.init_mm_sim_interface()
-        await mm_modem_interface.init_mm_3gpp_interface()
-        await mm_modem_interface.init_mm_3gpp_ussd_interface()
-        await mm_modem_interface.init_mm_3gpp_profile_manager_interface()
-        await mm_modem_interface.init_mm_messaging_interface()
-        await mm_modem_interface.init_mm_simple_interface()
-        await mm_modem_interface.init_mm_firmware_interface()
-        await mm_modem_interface.init_mm_time_interface()
-        await mm_modem_interface.init_mm_cdma_interface()
-        await mm_modem_interface.init_mm_sar_interface()
-        await mm_modem_interface.init_mm_oma_interface()
-        await mm_modem_interface.init_mm_signal_interface()
-        await mm_modem_interface.init_mm_location_interface()
-        await mm_modem_interface.init_mm_voice_interface()
+        promises = [mm_modem_interface.init_mm_sim_interface(),
+                    mm_modem_interface.init_mm_3gpp_interface(),
+                    mm_modem_interface.init_mm_3gpp_ussd_interface(),
+                    mm_modem_interface.init_mm_3gpp_profile_manager_interface(),
+                    mm_modem_interface.init_mm_messaging_interface(),
+                    mm_modem_interface.init_mm_simple_interface(),
+                    mm_modem_interface.init_mm_firmware_interface(),
+                    mm_modem_interface.init_mm_time_interface(),
+                    mm_modem_interface.init_mm_cdma_interface(),
+                    mm_modem_interface.init_mm_sar_interface(),
+                    mm_modem_interface.init_mm_oma_interface(),
+                    mm_modem_interface.init_mm_signal_interface(),
+                    mm_modem_interface.init_mm_location_interface(),
+                    mm_modem_interface.init_mm_voice_interface()]
+
+        await asyncio.gather(*promises)
+
         self.mm_modem_interfaces.append(mm_modem_interface)
         self.mm_modem_objects.append(f'/org/freedesktop/ModemManager1/Modem/{self.i}')
         self.i += 1
