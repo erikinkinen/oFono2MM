@@ -27,7 +27,7 @@ class MMModem3gppInterface(ServiceInterface):
             'Pco': Variant('a(ubay)', []),
             'InitialEpsBearer': Variant('o', '/org/freedesktop/ModemManager1/Bearer/0'),
             'InitialEpsBearerSettings': Variant('a{sv}', {
-                'profile-id': Variant('u', 1),
+                'profile-id': Variant('i', 1),
                 'profile-name': Variant('s', ''),
                 'apn': Variant('s', ''),
                 'allowed-auth': Variant('u', 1),
