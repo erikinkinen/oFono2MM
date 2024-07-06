@@ -48,19 +48,25 @@ class MMModemSignalInterface(ServiceInterface):
 
         old_props = self.props
         if 'org.ofono.NetworkMonitor' in self.ofono_interfaces:
-            cellinfo = await self.ofono_interfaces['org.ofono.NetworkMonitor'].call_get_serving_cell_information()
-            if cellinfo['Technology'].value == 'nr':
-                self.props['Nr5g'].value['rssi'] = Variant('d', cellinfo['ChannelQualityIndicator'].value if "ChannelQualityIndicator" in cellinfo else 0)
-                self.props['Nr5g'].value['rsrq'] = Variant('d', cellinfo['ReferenceSignalReceivedQuality'].value if "ReferenceSignalReceivedQuality" in cellinfo else 0)
-                self.props['Nr5g'].value['rsrp'] = Variant('d', cellinfo['ReferenceSignalReceivedPower'].value if "ReferenceSignalReceivedPower" in cellinfo else 0)
-            if cellinfo['Technology'].value == 'lte':
-                self.props['Lte'].value['rssi'] = Variant('d', cellinfo['ChannelQualityIndicator'].value if "ChannelQualityIndicator" in cellinfo else 0)
-                self.props['Lte'].value['rsrq'] = Variant('d', cellinfo['ReferenceSignalReceivedQuality'].value if "ReferenceSignalReceivedQuality" in cellinfo else 0)
-                self.props['Lte'].value['rsrp'] = Variant('d', cellinfo['ReferenceSignalReceivedPower'].value if "ReferenceSignalReceivedPower" in cellinfo else 0)
-            if cellinfo['Technology'].value == 'umts':
-                self.props['Umts'].value['rscp'] = Variant('d', cellinfo['ReceivedSignalCodePower'].value if "ReceivedSignalCodePower" in cellinfo else 0)
-            if cellinfo['Technology'].value == 'gsm':
-                self.props['Gsm'].value['error-rate'] = Variant('d', cellinfo['BitErrorRate'].value if "BitErrorRate" in cellinfo else 0)
+            cellinfo = []
+            try:
+                cellinfo = await self.ofono_interfaces['org.ofono.NetworkMonitor'].call_get_serving_cell_information()
+            except Exception as e:
+                ofono2mm_print(f"Failed to get cell info from NetworkMonitor: {e}", self.verbose)
+
+            if 'Technology' in cellinfo:
+                if cellinfo['Technology'].value == 'nr':
+                    self.props['Nr5g'].value['rssi'] = Variant('d', cellinfo['ChannelQualityIndicator'].value if "ChannelQualityIndicator" in cellinfo else 0)
+                    self.props['Nr5g'].value['rsrq'] = Variant('d', cellinfo['ReferenceSignalReceivedQuality'].value if "ReferenceSignalReceivedQuality" in cellinfo else 0)
+                    self.props['Nr5g'].value['rsrp'] = Variant('d', cellinfo['ReferenceSignalReceivedPower'].value if "ReferenceSignalReceivedPower" in cellinfo else 0)
+                if cellinfo['Technology'].value == 'lte':
+                    self.props['Lte'].value['rssi'] = Variant('d', cellinfo['ChannelQualityIndicator'].value if "ChannelQualityIndicator" in cellinfo else 0)
+                    self.props['Lte'].value['rsrq'] = Variant('d', cellinfo['ReferenceSignalReceivedQuality'].value if "ReferenceSignalReceivedQuality" in cellinfo else 0)
+                    self.props['Lte'].value['rsrp'] = Variant('d', cellinfo['ReferenceSignalReceivedPower'].value if "ReferenceSignalReceivedPower" in cellinfo else 0)
+                if cellinfo['Technology'].value == 'umts':
+                    self.props['Umts'].value['rscp'] = Variant('d', cellinfo['ReceivedSignalCodePower'].value if "ReceivedSignalCodePower" in cellinfo else 0)
+                if cellinfo['Technology'].value == 'gsm':
+                    self.props['Gsm'].value['error-rate'] = Variant('d', cellinfo['BitErrorRate'].value if "BitErrorRate" in cellinfo else 0)
 
         for prop in self.props:
             if self.props[prop].value != old_props[prop].value:
