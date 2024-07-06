@@ -131,6 +131,7 @@ class MMModemInterface(ServiceInterface):
     async def add_ofono_interface(self, iface):
         if iface in self.unused_interfaces:
             ofono2mm_print(f"Interface is {iface} which is unused, skipping", self.verbose)
+            return
         else:
             ofono2mm_print(f"Add oFono interface for iface {iface}", self.verbose)
 
