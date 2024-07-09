@@ -5,8 +5,9 @@ from dbus_next import Variant, DBusError
 from ofono2mm.logging import ofono2mm_print
 
 class MMModemSarInterface(ServiceInterface):
-    def __init__(self, verbose=False):
+    def __init__(self, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Sar')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing SAR interface", verbose)
         self.verbose = verbose
         self.props = {

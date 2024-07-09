@@ -61,8 +61,9 @@ def geoclue_get_location():
         raise Exception("Failed to get location data.")
 
 class MMModemLocationInterface(ServiceInterface):
-    def __init__(self, verbose=False):
+    def __init__(self, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Location')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing Location interface", verbose)
         self.verbose = verbose
         utc_time = datetime.utcnow().isoformat()

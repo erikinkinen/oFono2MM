@@ -33,13 +33,13 @@ bearer_i = 0
 class MMModemInterface(ServiceInterface):
     def __init__(self, loop, index, bus, ofono_client, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing Modem interface", verbose)
         self.loop = loop
         self.index = index
         self.bus = bus
         self.ofono_client = ofono_client
         self.ofono_proxy = self.ofono_client["ofono_modem"][modem_name]
-        self.modem_name = modem_name
         self.verbose = verbose
         self.ofono_modem = self.ofono_proxy['org.ofono.Modem']
         self.ofono_props = {}
@@ -265,7 +265,7 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_sim_interface(self):
         ofono2mm_print("Initialize SIM interface", self.verbose)
 
-        self.mm_sim_interface = MMSimInterface(self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
+        self.mm_sim_interface = MMSimInterface(self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager/SIM/{self.index}', self.mm_sim_interface)
         self.mm_sim_interface.set_props()
 
@@ -281,7 +281,7 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_3gpp_ussd_interface(self):
         ofono2mm_print("Initialize 3GPP USSD interface", self.verbose)
 
-        self.mm_modem3gpp_ussd_interface = MMModem3gppUssdInterface(self.ofono_interfaces, self.verbose)
+        self.mm_modem3gpp_ussd_interface = MMModem3gppUssdInterface(self.ofono_interfaces, self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem3gpp_ussd_interface)
 
     async def init_mm_3gpp_profile_manager_interface(self):
@@ -293,14 +293,14 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_simple_interface(self):
         ofono2mm_print("Initialize Simple interface", self.verbose)
 
-        self.mm_modem_simple_interface = MMModemSimpleInterface(self, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
+        self.mm_modem_simple_interface = MMModemSimpleInterface(self, self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_simple_interface)
         self.mm_modem_simple_interface.set_props()
 
     async def init_mm_firmware_interface(self):
         ofono2mm_print("Initialize Firmware interface", self.verbose)
 
-        self.mm_modem_firmware_interface = MMModemFirmwareInterface(self, self.verbose)
+        self.mm_modem_firmware_interface = MMModemFirmwareInterface(self, self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_firmware_interface)
         self.mm_modem_firmware_interface.set_props()
 
@@ -315,38 +315,38 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_cdma_interface(self):
         ofono2mm_print("Initialize CDMA interface", self.verbose)
 
-        self.mm_modem_cdma_interface = MMModemCDMAInterface(self.verbose)
+        self.mm_modem_cdma_interface = MMModemCDMAInterface(self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_cdma_interface)
 
     async def init_mm_sar_interface(self):
         ofono2mm_print("Initialize SAR interface", self.verbose)
 
-        self.mm_modem_sar_interface = MMModemSarInterface(self.verbose)
+        self.mm_modem_sar_interface = MMModemSarInterface(self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_sar_interface)
 
     async def init_mm_oma_interface(self):
         ofono2mm_print("Initialize OMA interface", self.verbose)
 
-        self.mm_modem_oma_interface = MMModemOmaInterface(self.verbose)
+        self.mm_modem_oma_interface = MMModemOmaInterface(self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_oma_interface)
 
     async def init_mm_signal_interface(self):
         ofono2mm_print("Initialize Signal interface", self.verbose)
 
-        self.mm_modem_signal_interface = MMModemSignalInterface(self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
+        self.mm_modem_signal_interface = MMModemSignalInterface(self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_signal_interface)
         await self.mm_modem_signal_interface.set_props()
 
     async def init_mm_location_interface(self):
         ofono2mm_print("Initialize Location interface", self.verbose)
 
-        self.mm_modem_location_interface = MMModemLocationInterface(self.verbose)
+        self.mm_modem_location_interface = MMModemLocationInterface(self.modem_name, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_location_interface)
 
     async def init_mm_voice_interface(self):
         ofono2mm_print("Initialize Voice interface", self.verbose)
 
-        self.mm_modem_voice_interface = MMModemVoiceInterface(self.bus, self.ofono_client, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
+        self.mm_modem_voice_interface = MMModemVoiceInterface(self.bus, self.ofono_client, self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_voice_interface)
 
         self.loop.create_task(self.init_voice_call_manager())
@@ -354,7 +354,7 @@ class MMModemInterface(ServiceInterface):
     async def init_mm_messaging_interface(self):
         ofono2mm_print("Initialize Messaging interface", self.verbose)
 
-        self.mm_modem_messaging_interface = MMModemMessagingInterface(self.bus, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
+        self.mm_modem_messaging_interface = MMModemMessagingInterface(self.bus, self.modem_name, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props, self.verbose)
         self.bus.export(f'/org/freedesktop/ModemManager1/Modem/{self.index}', self.mm_modem_messaging_interface)
 
         self.loop.create_task(self.init_message_manager())

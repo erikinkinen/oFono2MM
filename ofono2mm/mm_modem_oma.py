@@ -5,8 +5,9 @@ from dbus_next import Variant, DBusError
 from ofono2mm.logging import ofono2mm_print
 
 class MMModemOmaInterface(ServiceInterface):
-    def __init__(self, verbose=False):
+    def __init__(self, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Oma')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing OMA interface", verbose)
         self.verbose = verbose
         self.props = {

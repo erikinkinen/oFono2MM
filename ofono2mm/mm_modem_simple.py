@@ -13,8 +13,9 @@ from dbus import SystemBus, Interface
 from dbus.mainloop.glib import DBusGMainLoop
 
 class MMModemSimpleInterface(ServiceInterface):
-    def __init__(self, mm_modem, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
+    def __init__(self, mm_modem, modem_name, ofono_props, ofono_interfaces, ofono_interface_props, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Simple')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing Simple interface", verbose)
         self.mm_modem = mm_modem
         self.ofono_props = ofono_props

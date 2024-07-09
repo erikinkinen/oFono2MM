@@ -8,9 +8,9 @@ from ofono2mm.logging import ofono2mm_print
 class MMModemTimeInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, ofono_interfaces, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Time')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing Time interface", verbose)
         self.ofono_client = ofono_client
-        self.modem_name = modem_name
         self.ofono_interfaces = ofono_interfaces
         self.verbose = verbose
         self.network_time = datetime.now().isoformat()

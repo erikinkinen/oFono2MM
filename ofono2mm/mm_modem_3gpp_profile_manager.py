@@ -8,9 +8,9 @@ from ofono2mm.logging import ofono2mm_print
 class MMModem3gppProfileManagerInterface(ServiceInterface):
     def __init__(self, ofono_client, modem_name, verbose=False):
         super().__init__('org.freedesktop.ModemManager1.Modem.Modem3gpp.ProfileManager')
+        self.modem_name = modem_name
         ofono2mm_print("Initializing 3GPP profile manager interface", verbose)
         self.ofono_client = ofono_client
-        self.modem_name = modem_name
         self.verbose = verbose
         self.index_field = 'profile-id'
         self.props = {
