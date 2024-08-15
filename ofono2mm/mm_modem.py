@@ -18,6 +18,7 @@ from ofono2mm.mm_modem_location import MMModemLocationInterface
 from ofono2mm.mm_sim import MMSimInterface
 from ofono2mm.mm_bearer import MMBearerInterface
 from ofono2mm.mm_modem_voice import MMModemVoiceInterface
+from ofono2mm.logger import Logger
 
 import asyncio
 
@@ -37,6 +38,35 @@ class ModemManagerState:
     DISCONNECTING = 9
     CONNECTING    = 10
     CONNECTED     = 11
+
+    def to_string(value):
+        match value:
+            case ModemManagerState.FAILED:
+                return "Failed"
+            case ModemManagerState.UNKNOWN:
+                return "Unknown"
+            case ModemManagerState.INITIALIZING:
+                return "Initializing"
+            case ModemManagerState.LOCKED:
+                return "Locked"
+            case ModemManagerState.DISABLED:
+                return "Disabled"
+            case ModemManagerState.DISABLING:
+                return "Disabling"
+            case ModemManagerState.ENABLING:
+                return "Enabling"
+            case ModemManagerState.ENABLED:
+                return "Enabled"
+            case ModemManagerState.SEARCHING:
+                return "Searching"
+            case ModemManagerState.REGISTERED:
+                return "Registered"
+            case ModemManagerState.DISCONNECTING:
+                return "Disconnecting"
+            case ModemManagerState.CONNECTING:
+                return "Connecting"
+            case _:
+                return "Connected"
 
 class ModemManagerStateFailedReason:
     NONE                  = 0
@@ -438,6 +468,9 @@ class MMModemInterface(ServiceInterface):
         old_state = self.props['State'].value
 
         self.set_modem_state()
+
+        if old_state != self.props['State'].value:
+            Logger.info("Modem state: %s", ModemManagerState.to_string(self.props['State'].value))
 
         if 'org.ofono.SimManager' in self.ofono_interface_props:
             self.props['OwnNumbers'] = Variant('as', self.ofono_interface_props['org.ofono.SimManager']['SubscriberNumbers'].value if 'SubscriberNumbers' in self.ofono_interface_props['org.ofono.SimManager'] else [])
