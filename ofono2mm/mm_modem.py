@@ -110,6 +110,61 @@ OFONO_RETRIES_LOCK = {
     'netsubpuk': ModemManagerLock.PH_NETSUB_PUK,
 }
 
+class ModemManagerAccessTechnology:
+    UNKNOWN     = 0
+    POTS        = 1 << 0
+    GSM         = 1 << 1
+    GSM_COMPACT = 1 << 2
+    GPRS        = 1 << 3
+    EDGE        = 1 << 4
+    UMTS        = 1 << 5
+    HSDPA       = 1 << 6
+    HSUPA       = 1 << 7
+    HSPA        = 1 << 8
+    HSPA_PLUS   = 1 << 9
+    _1XRTT      = 1 << 10
+    EVDO0       = 1 << 11
+    EVDOA       = 1 << 12
+    EVDOB       = 1 << 13
+    LTE         = 1 << 14
+    _5GNR       = 1 << 15
+    LTE_CAT_M   = 1 << 16
+    LTE_NB_IOT  = 1 << 17
+    ANY         = 0xFFFFFFFF
+
+class ModemManagerCellType:
+    UNKNOWN = 0
+    CDMA    = 1
+    GSM     = 2
+    UMTS    = 3
+    TDSCDMA = 4
+    LTE     = 5
+    _5GNR   = 6
+
+OFONO_TECHNOLOGIES = {
+    "nr": ModemManagerAccessTechnology._5GNR,
+    "lte": ModemManagerAccessTechnology.LTE,
+    "hspa": ModemManagerAccessTechnology.HSPA,
+    "hsupa": ModemManagerAccessTechnology.HSUPA,
+    "hsdpa": ModemManagerAccessTechnology.HSDPA,
+    "umts": ModemManagerAccessTechnology.UMTS,
+    "edge": ModemManagerAccessTechnology.GSM,
+    "gprs": ModemManagerAccessTechnology.GSM,
+    "gsm": ModemManagerAccessTechnology.GSM
+}
+
+OFONO_CELL_TYPES = {
+    "nr": ModemManagerCellType._5GNR,
+    "lte": ModemManagerCellType.LTE,
+    "hspa": ModemManagerCellType.UMTS,
+    "hsupa": ModemManagerCellType.UMTS,
+    "hsdpa": ModemManagerCellType.UMTS,
+    "umts": ModemManagerCellType.UMTS,
+    "edge": ModemManagerCellType.GSM,
+    "gprs": ModemManagerCellType.GSM,
+    "gsm": ModemManagerCellType.GSM
+}
+
 class MMModemInterface(ServiceInterface):
     def __init__(self, loop, index, bus, ofono_client, modem_name):
         super().__init__('org.freedesktop.ModemManager1.Modem')
@@ -123,7 +178,7 @@ class MMModemInterface(ServiceInterface):
         self.ofono_props = {}
         self.ofono_interfaces = {}
         self.ofono_interface_props = {}
-        self.mm_cell_type = 0 # on runtime unknown MM_CELL_TYPE_UNKNOWN
+        self.mm_cell_type = ModemManagerCellType.UNKNOWN
         self.mm_modem3gpp_interface = False
         self.mm_modem_messaging_interface = False
         self.mm_sim_interface = False
@@ -157,7 +212,7 @@ class MMModemInterface(ServiceInterface):
             'UnlockRetries': Variant('a{uu}', {}),
             'State': Variant('i', ModemManagerState.UNKNOWN),
             'StateFailedReason': Variant('u', ModemManagerStateFailedReason.UNKNOWN),
-            'AccessTechnologies': Variant('u', 0), # on runtime unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
+            'AccessTechnologies': Variant('u', ModemManagerAccessTechnology.UNKNOWN),
             'SignalQuality': Variant('(ub)', [0, False]),
             'OwnNumbers': Variant('as', []),
             'PowerState': Variant('u', 3), # on runtime power on MM_MODEM_POWER_STATE_ON
@@ -515,6 +570,22 @@ class MMModemInterface(ServiceInterface):
                 pass
         self.props['UnlockRetries'] = Variant('a{uu}', unlock_retries)
 
+    def set_access_technology(self):
+        if 'org.ofono.NetworkRegistration' not in self.ofono_interface_props or \
+                self.props['State'].value not in [ModemManagerState.REGISTERED,
+                                                  ModemManagerState.CONNECTED]:
+            self.props['AccessTechnologies'] = Variant('u', ModemManagerAccessTechnology.UNKNOWN)
+            self.props['SignalQuality'] = Variant('(ub)', [0, False])
+            return
+
+        if "Technology" not in self.ofono_interface_props['org.ofono.NetworkRegistration']:
+            self.props['AccessTechnologies'] = Variant('u', ModemManagerAccessTechnology.UNKNOWN)
+            return
+
+        ofono_tech = self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value
+        self.props['AccessTechnologies'] = Variant('u', OFONO_TECHNOLOGIES[ofono_tech])
+        self.mm_cell_type = OFONO_CELL_TYPES[ofono_tech]
+
     def set_props(self):
         old_props = self.props.copy()
         old_state = self.props['State'].value
@@ -526,44 +597,7 @@ class MMModemInterface(ServiceInterface):
 
         self.set_sim_state()
 
-        if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and self.props['State'].value in [ModemManagerState.REGISTERED,
-                                                                                                           ModemManagerState.CONNECTED]:
-            if "Technology" in self.ofono_interface_props['org.ofono.NetworkRegistration']:
-                current_tech = 0
-                if self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "nr":
-                    current_tech |= 1 << 15 # network is 5g MM_MODEM_ACCESS_TECHNOLOGY_5GNR
-                    self.mm_cell_type = 6 # cell type is 5g MM_CELL_TYPE_5GNR
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "lte":
-                    current_tech |= 1 << 14 # network is lte MM_MODEM_ACCESS_TECHNOLOGY_LTE
-                    self.mm_cell_type = 5 # cell type is lte MM_CELL_TYPE_LTE
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspa":
-                    current_tech |= 1 << 8 # network is hspa MM_MODEM_ACCESS_TECHNOLOGY_HSPA
-                    self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hsupa":
-                    current_tech |= 1 << 7 # network is hsupa MM_MODEM_ACCESS_TECHNOLOGY_HSUPA
-                    self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hsdpa":
-                    current_tech |= 1 << 6 # network is hsdpa MM_MODEM_ACCESS_TECHNOLOGY_HSDPA
-                    self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "umts":
-                    current_tech |= 1 << 5 # network is umts MM_MODEM_ACCESS_TECHNOLOGY_UMTS
-                    self.mm_cell_type = 3 # cell type is umts MM_CELL_TYPE_UMTS
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "edge":
-                    current_tech |= 1 << 4 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
-                    self.mm_cell_type = 2 # cell type is gsm MM_CELL_TYPE_GSM
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gprs":
-                    current_tech |= 1 << 3 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
-                    self.mm_cell_type = 2 # cell type is gsm MM_CELL_TYPE_GSM
-                elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gsm":
-                    current_tech |= 1 << 1 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
-                    self.mm_cell_type = 2 # cell type is gsm MM_CELL_TYPE_GSM
-
-                self.props['AccessTechnologies'] = Variant('u', current_tech)
-            else:
-                self.props['AccessTechnologies'] = Variant('u', 0) # network is unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
-        else:
-            self.props['AccessTechnologies'] = Variant('u', 0)
-            self.props['SignalQuality'] = Variant('(ub)', [0, False])
+        self.set_access_technology()
 
         caps = 0
         modes = 0
