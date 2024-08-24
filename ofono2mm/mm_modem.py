@@ -76,6 +76,40 @@ class ModemManagerStateFailedReason:
     UNKNOWN_CAPABILITIES  = 4
     ESIM_WITHOUT_PROFILES = 5
 
+class ModemManagerLock:
+    UNKNOWN        = 0
+    NONE           = 1
+    SIM_PIN        = 2
+    SIM_PIN2       = 3
+    SIM_PUK        = 4
+    SIM_PUK2       = 5
+    PH_SP_PIN      = 6
+    PH_SP_PUK      = 7
+    PH_NET_PIN     = 8
+    PH_NET_PUK     = 9
+    PH_SIM_PIN     = 10
+    PH_CORP_PIN    = 11
+    PH_CORP_PUK    = 12
+    PH_FSIM_PIN    = 13
+    PH_FSIM_PUK    = 14
+    PH_NETSUB_PIN  = 15
+    PH_NETSUB_PUK  = 16
+
+OFONO_RETRIES_LOCK = {
+    'pin' : ModemManagerLock.SIM_PIN,
+    'pin2': ModemManagerLock.SIM_PIN2,
+    'puk': ModemManagerLock.SIM_PUK,
+    'puk2': ModemManagerLock.SIM_PUK2,
+    'service': ModemManagerLock.PH_SP_PIN,
+    'servicepuk': ModemManagerLock.PH_SP_PUK,
+    'network': ModemManagerLock.PH_NET_PIN,
+    'networkpuk': ModemManagerLock.PH_NET_PUK,
+    'corp': ModemManagerLock.PH_CORP_PIN,
+    'corppuk': ModemManagerLock.PH_CORP_PUK,
+    'netsub': ModemManagerLock.PH_NETSUB_PIN,
+    'netsubpuk': ModemManagerLock.PH_NETSUB_PUK,
+}
+
 class MMModemInterface(ServiceInterface):
     def __init__(self, loop, index, bus, ofono_client, modem_name):
         super().__init__('org.freedesktop.ModemManager1.Modem')
@@ -119,7 +153,7 @@ class MMModemInterface(ServiceInterface):
             'PrimaryPort': Variant('s', self.modem_name),
             'Ports': Variant('a(su)', [[self.modem_name, 0]]), # on runtime unknown MM_MODEM_PORT_TYPE_UNKNOWN
             'EquipmentIdentifier': Variant('s', ''),
-            'UnlockRequired': Variant('u', 0), # on runtime unknown MM_MODEM_LOCK_UNKNOWN
+            'UnlockRequired': Variant('u', ModemManagerLock.UNKNOWN),
             'UnlockRetries': Variant('a{uu}', {}),
             'State': Variant('i', ModemManagerState.UNKNOWN),
             'StateFailedReason': Variant('u', ModemManagerStateFailedReason.UNKNOWN),
@@ -409,9 +443,9 @@ class MMModemInterface(ServiceInterface):
         self.props['StateFailedReason'] = Variant('i', ModemManagerStateFailedReason.NONE)
 
         if self.ofono_interface_props['org.ofono.SimManager']['PinRequired'].value == 'none':
-            self.props['UnlockRequired'] = Variant('u', 1) # modem is unlocked MM_MODEM_LOCK_NONE
+            self.props['UnlockRequired'] = Variant('u', ModemManagerLock.NONE)
         else:
-            self.props['UnlockRequired'] = Variant('u', 2) # modem needs a pin MM_MODEM_LOCK_SIM_PIN
+            self.props['UnlockRequired'] = Variant('u', ModemManagerLock.SIM_PIN)
             self.props['State'] = Variant('i', ModemManagerState.LOCKED)
             return
 
@@ -463,6 +497,24 @@ class MMModemInterface(ServiceInterface):
         if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value in ['registered', 'roaming']:
             self.props['State'] = Variant('i', ModemManagerState.REGISTERED)
 
+    def set_sim_state(self):
+        if 'org.ofono.SimManager' not in self.ofono_interface_props:
+            return
+
+        try:
+            self.props['OwnNumbers'] = Variant('as', self.ofono_interface_props['org.ofono.SimManager']['SubscriberNumbers'].value)
+        except:
+            self.props['OwnNumbers'] = Variant('as', [])
+
+        unlock_retries = {}
+        for key in OFONO_RETRIES_LOCK.keys():
+            try:
+                value = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value[key]
+                unlock_retries[OFONO_RETRIES_LOCK[key]] = value
+            except:
+                pass
+        self.props['UnlockRetries'] = Variant('a{uu}', unlock_retries)
+
     def set_props(self):
         old_props = self.props.copy()
         old_state = self.props['State'].value
@@ -472,103 +524,7 @@ class MMModemInterface(ServiceInterface):
         if old_state != self.props['State'].value:
             Logger.info("Modem state: %s", ModemManagerState.to_string(self.props['State'].value))
 
-        if 'org.ofono.SimManager' in self.ofono_interface_props:
-            self.props['OwnNumbers'] = Variant('as', self.ofono_interface_props['org.ofono.SimManager']['SubscriberNumbers'].value if 'SubscriberNumbers' in self.ofono_interface_props['org.ofono.SimManager'] else [])
-
-            if 'Retries' in self.ofono_interface_props['org.ofono.SimManager']:
-                if 'pin' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    pin = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin']
-                else:
-                    pin = -1
-
-                if 'pin2' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    pin2 = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['pin2']
-                else:
-                    pin2 = -1
-
-                if 'puk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    puk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk']
-                else:
-                    puk = -1
-
-                if 'puk2' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    puk2 = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['puk2']
-                else:
-                    puk2 = -1
-
-                if 'service' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    service = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['service']
-                else:
-                    service = -1
-
-                if 'servicepuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    servicepuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['servicepuk']
-                else:
-                    servicepuk = -1
-
-                if 'network' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    network = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['network']
-                else:
-                    network = -1
-
-                if 'networkpuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    networkpuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['networkpuk']
-                else:
-                    networkpuk = -1
-
-                if 'corp' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    corp = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corp']
-                else:
-                    corp = -1
-
-                if 'corppuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    corppuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['corppuk']
-                else:
-                    corppuk = -1
-
-                if 'netsub' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    netsub = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsub']
-                else:
-                    netsub = -1
-
-                if 'netsubpuk' in self.ofono_interface_props['org.ofono.SimManager']['Retries'].value:
-                    netsubpuk = self.ofono_interface_props['org.ofono.SimManager']['Retries'].value['netsubpuk']
-                else:
-                    netsubpuk = -1
-
-                unlock_retries = {}
-
-                if pin != -1:
-                    unlock_retries[2] = pin # MM_MODEM_LOCK_SIM_PIN
-                if pin2 != -1:
-                    unlock_retries[3] = pin2 # MM_MODEM_LOCK_SIM_PIN2
-                if puk != -1:
-                    unlock_retries[4] = puk # MM_MODEM_LOCK_SIM_PUK
-                if puk2 != -1:
-                    unlock_retries[5] = puk2 # MM_MODEM_LOCK_SIM_PUK2
-                if service != -1:
-                    unlock_retries[6] = service # MM_MODEM_LOCK_PH_SP_PIN
-                if servicepuk != -1:
-                    unlock_retries[7] = servicepuk # MM_MODEM_LOCK_PH_SP_PUK
-                if network != -1:
-                    unlock_retries[8] = network # MM_MODEM_LOCK_PH_NET_PIN
-                if networkpuk != -1:
-                    unlock_retries[9] = networkpuk # MM_MODEM_LOCK_PH_NET_PUK
-                if corp != -1:
-                    unlock_retries[11] = corp # MM_MODEM_LOCK_PH_CORP_PIN
-                if corppuk != -1:
-                    unlock_retries[12] = corppuk # MM_MODEM_LOCK_PH_CORP_PUK
-                if netsub != -1:
-                    unlock_retries[15] = netsub # MM_MODEM_LOCK_PH_NETSUB_PIN
-                if netsubpuk != -1:
-                    unlock_retries[16] = netsubpuk # MM_MODEM_LOCK_PH_NETSUB_PUK
-            else:
-                unlock_retries = {}
-
-            self.props['UnlockRetries'] = Variant('a{uu}', unlock_retries)
-        else:
-            self.props['OwnNumbers'] = Variant('as', [])
-            self.props['UnlockRetries'] = Variant('a{uu}', {})
+        self.set_sim_state()
 
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and self.props['State'].value in [ModemManagerState.REGISTERED,
                                                                                                            ModemManagerState.CONNECTED]:
