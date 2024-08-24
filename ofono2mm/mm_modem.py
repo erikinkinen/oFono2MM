@@ -165,6 +165,87 @@ OFONO_CELL_TYPES = {
     "gsm": ModemManagerCellType.GSM
 }
 
+class ModemManagerMode:
+    NONE = 0
+    CS   = 1 << 0
+    _2G  = 1 << 1
+    _3G  = 1 << 2
+    _4G  = 1 << 3
+    _5G  = 1 << 4
+    ANY  = 0xFFFFFFFF
+
+class ModemManagerCapability:
+    NONE         = 0
+    POTS         = 1 << 0
+    CDMA_EVDO    = 1 << 1
+    GSM_UMTS     = 1 << 2
+    LTE          = 1 << 3
+    IRIDIUM      = 1 << 5
+    _5GNR        = 1 << 6
+    TDS          = 1 << 7
+    ANY          = 0xFFFFFFFF
+
+OFONO_MODES = {
+    "gsm": ModemManagerMode._2G,
+    "umts": ModemManagerMode._3G,
+    "lte": ModemManagerMode._4G,
+    "nr": ModemManagerMode._5G
+}
+
+OFONO_CAPS = {
+    "gsm": ModemManagerCapability.GSM_UMTS,
+    "umts": ModemManagerCapability.GSM_UMTS,
+    "lte": ModemManagerCapability.LTE,
+    "nr": ModemManagerCapability._5GNR
+}
+
+MM_MODES = {
+    ModemManagerMode._2G | ModemManagerMode._3G | ModemManagerMode._4G | ModemManagerMode._5G: [
+        [ModemManagerMode._2G | ModemManagerMode._3G | ModemManagerMode._4G | ModemManagerMode._5G, ModemManagerMode._5G],
+        [ModemManagerMode._2G | ModemManagerMode._3G | ModemManagerMode._4G, ModemManagerMode._4G],
+        [ModemManagerMode._2G | ModemManagerMode._3G, ModemManagerMode._3G],
+        [ModemManagerMode._2G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._3G | ModemManagerMode._4G | ModemManagerMode._5G: [
+        [ModemManagerMode._3G | ModemManagerMode._4G | ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._2G | ModemManagerMode._4G | ModemManagerMode._5G: [
+        [ModemManagerMode._2G | ModemManagerMode._4G | ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._4G | ModemManagerMode._5G: [
+        [ModemManagerMode._4G | ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._3G | ModemManagerMode._5G: [
+        [ModemManagerMode._3G | ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._2G | ModemManagerMode._5G: [
+        [ModemManagerMode._2G | ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._5G: [
+        [ModemManagerMode._5G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._2G | ModemManagerMode._3G | ModemManagerMode._4G: [
+        [ModemManagerMode._2G | ModemManagerMode._3G | ModemManagerMode._4G, ModemManagerMode._4G],
+        [ModemManagerMode._2G | ModemManagerMode._3G, ModemManagerMode._3G],
+        [ModemManagerMode._2G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._3G | ModemManagerMode._4G: [
+        [ModemManagerMode._3G | ModemManagerMode._4G, ModemManagerMode._4G],
+        [ModemManagerMode._3G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._2G | ModemManagerMode._4G: [
+        [ModemManagerMode._2G | ModemManagerMode._4G, ModemManagerMode._4G],
+        [ModemManagerMode._2G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._3G: [
+        [ModemManagerMode._3G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode._2G: [
+        [ModemManagerMode._2G, ModemManagerMode.ANY]
+    ],
+    ModemManagerMode.NONE: []
+}
+
 class MMModemInterface(ServiceInterface):
     def __init__(self, loop, index, bus, ofono_client, modem_name):
         super().__init__('org.freedesktop.ModemManager1.Modem')
@@ -189,8 +270,8 @@ class MMModemInterface(ServiceInterface):
             'SimSlots': Variant('ao', [f'/org/freedesktop/ModemManager/SIM/{self.index}']),
             'PrimarySimSlot': Variant('u', 0),
             'Bearers': Variant('ao', []),
-            'SupportedCapabilities': Variant('au', [0]), # on runtime none MM_MODEM_CAPABILITY_NONE
-            'CurrentCapabilities': Variant('u', 0), # on runtime none MM_MODEM_CAPABILITY_NONE
+            'SupportedCapabilities': Variant('au', [ModemManagerCapability.NONE]),
+            'CurrentCapabilities': Variant('u', ModemManagerCapability.NONE),
             'MaxBearers': Variant('u', 4),
             'MaxActiveBearers': Variant('u', 2),
             'MaxActiveMultiplexedBearers': Variant('u', 2),
@@ -216,8 +297,8 @@ class MMModemInterface(ServiceInterface):
             'SignalQuality': Variant('(ub)', [0, False]),
             'OwnNumbers': Variant('as', []),
             'PowerState': Variant('u', 3), # on runtime power on MM_MODEM_POWER_STATE_ON
-            'SupportedModes': Variant('a(uu)', [[0, 0]]), # on runtime allowed mode none, preferred mode none MM_MODEM_MODE_NONE
-            'CurrentModes': Variant('(uu)', [0, 0]), # on runtime allowed mode none, preferred mode none MM_MODEM_MODE_NONE
+            'SupportedModes': Variant('a(uu)', [[ModemManagerMode.NONE, ModemManagerMode.NONE]]),
+            'CurrentModes': Variant('(uu)', [ModemManagerMode.NONE, ModemManagerMode.NONE]),
             'SupportedBands': Variant('au', []),
             'CurrentBands': Variant('au', []),
             'SupportedIpFamilies': Variant('u', 3) # hardcoded value ipv4 and ipv6 MM_BEARER_IP_FAMILY_IPV4V6
@@ -583,8 +664,48 @@ class MMModemInterface(ServiceInterface):
             return
 
         ofono_tech = self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value
+        Logger.debug ("AccessTechnologies: %s -> %s", ofono_tech, OFONO_TECHNOLOGIES[ofono_tech])
         self.props['AccessTechnologies'] = Variant('u', OFONO_TECHNOLOGIES[ofono_tech])
         self.mm_cell_type = OFONO_CELL_TYPES[ofono_tech]
+
+    def set_capabilities(self):
+        caps = 0
+        try:
+            for ofono_tech in self.ofono_interface_props['org.ofono.RadioSettings']['AvailableTechnologies'].value:
+                caps |= OFONO_CAPS[ofono_tech]
+        except KeyError:
+            caps =  ModemManagerCapability.LTE
+        except Exception as e:
+            Logger.error("%s", e)
+
+        Logger.debug ("SupportedCapabilities: %s", caps)
+        self.props['CurrentCapabilities'] = Variant('u', caps)
+        self.props['SupportedCapabilities'] = Variant('au', [caps])
+
+    def set_supported_modes(self):
+        try:
+            ofono_pref =  self.ofono_interface_props['org.ofono.RadioSettings']['TechnologyPreference'].value
+            mm_pref = OFONO_MODES[ofono_pref]
+            mm_modes = 0;
+
+            for ofono_tech in self.ofono_interface_props['org.ofono.RadioSettings']['AvailableTechnologies'].value:
+                mm_modes |= OFONO_MODES[ofono_tech]
+            Logger.debug ("SupportedModes: %s -> %s", mm_modes, MM_MODES[mm_modes])
+            self.props['SupportedModes'] = Variant('a(uu)', MM_MODES[mm_modes])
+
+            for mode in MM_MODES[mm_modes]:
+                if mode[1] == mm_pref:
+                    self.props['CurrentModes'] = Variant('(uu)', [mode[0], mm_pref])
+                    break
+                elif mode[1] & mm_pref != 0:
+                    self.props['CurrentModes'] = Variant('(uu)', [mm_pref, ModemManagerMode.NONE])
+                    break
+            Logger.debug ("CurrentModes: %s", self.props['CurrentModes'].value)
+        except KeyError:
+            self.props['SupportedModes'] = Variant('a(uu)', [[ModemManagerMode.NONE, ModemManagerMode.NONE]])
+            self.props['CurrentModes'] = Variant('(uu)', [ModemManagerMode.NONE, ModemManagerMode.NONE])
+        except Exception as e:
+            Logger.error("%s", e)
 
     def set_props(self):
         old_props = self.props.copy()
@@ -596,96 +717,9 @@ class MMModemInterface(ServiceInterface):
             Logger.info("Modem state: %s", ModemManagerState.to_string(self.props['State'].value))
 
         self.set_sim_state()
-
         self.set_access_technology()
-
-        caps = 0
-        modes = 0
-        pref = 0
-        if 'org.ofono.RadioSettings' in self.ofono_interface_props:
-            if 'AvailableTechnologies' in self.ofono_interface_props['org.ofono.RadioSettings']:
-                ofono_techs = self.ofono_interface_props['org.ofono.RadioSettings']['AvailableTechnologies'].value
-                if 'gsm' in ofono_techs:
-                    caps |= 4
-                    modes |= 2
-                if 'umts' in ofono_techs:
-                    caps |= 4
-                    modes |= 4
-                if 'lte' in ofono_techs:
-                    caps |= 8
-                    modes |= 8
-                if 'nr' in ofono_techs:
-                    caps |= 16
-                    modes |= 16
-
-            if 'TechnologyPreference' in self.ofono_interface_props['org.ofono.RadioSettings']:
-                ofono_pref =  self.ofono_interface_props['org.ofono.RadioSettings']['TechnologyPreference'].value
-                if ofono_pref == 'nr':
-                    pref = 16 # current mode nr MM_MODEM_MODE_5G
-                if ofono_pref == 'lte':
-                    pref = 8 # current mode lte MM_MODEM_MODE_4G
-                if ofono_pref == 'umts':
-                    pref = 4 # current mode umts MM_MODEM_MODE_3G
-                if ofono_pref == 'gsm':
-                    pref = 2 # current mode gsm MM_MODEM_MODE_2G
-
-        self.props['CurrentCapabilities'] = Variant('u', caps)
-        self.props['SupportedCapabilities'] = Variant('au', [caps])
-
-        if caps == 0:
-            self.props['CurrentCapabilities'] = Variant('u', 4) # lte MM_MODEM_CAPABILITY_LTE
-            self.props['SupportedCapabilities'] = Variant('au', [4]) # lte MM_MODEM_CAPABILITY_LTE
-
-        supported_modes = []
-        if modes == 30:
-            supported_modes.append([30, 16])
-            supported_modes.append([14, 8])
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 28:
-            supported_modes.append([28, 0])
-        if modes == 26:
-            supported_modes.append([26, 0])
-        if modes == 24:
-            supported_modes.append([24, 0])
-        if modes == 22:
-            supported_modes.append([22, 0])
-        if modes == 20:
-            supported_modes.append([20, 0])
-        if modes == 18:
-            supported_modes.append([18, 0])
-        if modes == 16:
-            supported_modes.append([16, 0])
-        if modes == 14:
-            supported_modes.append([14, 8])
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 12:
-            supported_modes.append([12, 8])
-            supported_modes.append([4, 0])
-        if modes == 10:
-            supported_modes.append([10, 8])
-            supported_modes.append([2, 0])
-        if modes == 8:
-            supported_modes.append([8, 0])
-        if modes == 6:
-            supported_modes.append([6, 4])
-            supported_modes.append([2, 0])
-        if modes == 4:
-            supported_modes.append([4, 0])
-        if modes == 2:
-            supported_modes.append([2, 0])
-
-        self.props['SupportedModes'] = Variant('a(uu)', supported_modes)
-        for mode in supported_modes:
-            if mode[1] == pref:
-                self.props['CurrentModes'] = Variant('(uu)', [mode[0], pref])
-            if mode[1] == 0 and mode[0] == pref:
-                self.props['CurrentModes'] = Variant('(uu)', [mode[0], 0]) # current mode none MM_MODEM_MODE_NONE
-
-        if supported_modes == []:
-            self.props['SupportedModes'] = Variant('a(uu)', [[0, 0]]) # allowed mode none, preferred mode none MM_MODEM_MODE_NONE
-            self.props['CurrentModes'] = Variant('(uu)', [0, 0]) # allowed mode none, preferred mode none MM_MODEM_MODE_NONE
+        self.set_capabilities()
+        self.set_supported_modes()
 
         self.props['EquipmentIdentifier'] = Variant('s', self.ofono_props['Serial'].value if 'Serial' in self.ofono_props else '')
         self.props['HardwareRevision'] = Variant('s', self.ofono_props['Revision'].value if 'Revision' in self.ofono_props else '')
@@ -855,22 +889,17 @@ class MMModemInterface(ServiceInterface):
 
     @method()
     async def SetCurrentModes(self, modes: '(uu)'):
-        if modes in self.props['SupportedModes'].value:
-            if modes[1] == 16:
-                await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
-            if modes[1] == 8:
-                await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'lte'))
-            if modes[1] == 4:
-                await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'umts'))
-            if modes[1] == 0:
-                if modes[0] | 2:
-                    await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'gsm'))
-                elif modes[0] | 4:
-                    await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'umts'))
-                elif modes[0] | 8:
-                    await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'lte'))
-                elif modes[0] | 16:
-                    await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', 'nr'))
+        for supported_modes in self.props['SupportedModes'].value:
+            if supported_modes[1] == modes[1]:
+                value = list(filter(lambda x: OFONO_MODES[x] == modes[1], OFONO_MODES))[0]
+                await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', value))
+                return
+
+        for supported_modes in self.props['SupportedModes'].value[::-1]:
+            if supported_modes[0] & modes[0] != 0:
+                value = list(filter(lambda x: OFONO_MODES[x] == modes[0], OFONO_MODES))[0]
+                await self.ofono_interfaces['org.ofono.RadioSettings'].call_set_property('TechnologyPreference', Variant('s', value))
+                return
 
         self.set_props()
 
