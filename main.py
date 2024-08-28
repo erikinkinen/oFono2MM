@@ -7,8 +7,10 @@ from dbus_next.constants import PropertyAccess
 from dbus_next import DBusError, BusType
 
 import asyncio
+from argparse import ArgumentParser
 
 from ofono2mm import MMModemInterface, Ofono, DBus
+from ofono2mm.logger import Logger
 from ofono2mm.utils import async_locked
 
 has_bus = False
@@ -145,6 +147,18 @@ class MMInterface(ServiceInterface):
         pass
 
 async def main():
+    parser = ArgumentParser(description="oFono2MM.", add_help=False)
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug messages.')
+    parser.add_argument('-h', '--help', action='store_true', help='Show help.')
+
+    args = parser.parse_args()
+
+    if args.help:
+        parser.print_help()
+        return
+
+    Logger.DEBUG = args.debug
+
     bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
     loop = asyncio.get_running_loop()
     mm_manager_interface = MMInterface(loop, bus)
