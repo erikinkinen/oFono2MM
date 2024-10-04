@@ -54,8 +54,8 @@ class MMCallInterface(ServiceInterface):
                 self.StateChanged(old_state, new_state, reason)
             elif value.value == "disconnected":
                 old_state = self.props['State'].value
-                new_state = 4 # MM_CALL_STATE_TERMINATED
-                reason = 7 # MM_CALL_STATE_REASON_TERMINATED
+                new_state = 7 # MM_CALL_STATE_TERMINATED
+                reason = 4 # MM_CALL_STATE_REASON_TERMINATED
                 self.props['State'] = Variant('i', new_state)
                 self.StateChanged(old_state, new_state, reason)
 
@@ -89,11 +89,7 @@ class MMCallInterface(ServiceInterface):
 
     @method()
     async def Hangup(self):
-        # ofono_interface = self.ofono_client["ofono_modem"][self.voicecall]['org.ofono.VoiceCall']
-        # await ofono_interface.call_hangup()
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_hangup_all()
-        self.props['State'] = Variant('i', 7) # terminated MM_CALL_STATE_TERMINATED
-        self.props['StateReason'] = Variant('i', 4) # terminated MM_CALL_STATE_REASON_TERMINATED
 
     @method()
     async def SendDtmf(self, dtmf: 's'):
