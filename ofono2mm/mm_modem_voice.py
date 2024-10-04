@@ -47,6 +47,7 @@ class MMModemVoiceInterface(ServiceInterface):
     async def add_call(self, path, props):
         global call_i
         if props['State'].value == 'incoming':
+            call_i += 1
             if 'org.ofono.SimManager' in self.ofono_interfaces and 'FixedDialing' in self.ofono_interface_props['org.ofono.SimManager']:
                 self.props['EmergencyOnly'] = Variant('b', self.ofono_interface_props['org.ofono.SimManager']['FixedDialing'].value)
             else:
@@ -67,12 +68,12 @@ class MMModemVoiceInterface(ServiceInterface):
             self.props['Calls'].value.append(f'/org/freedesktop/ModemManager1/Call/{call_i}')
             self.emit_properties_changed({'Calls': self.props['Calls'].value})
             self.CallAdded(f'/org/freedesktop/ModemManager1/Call/{call_i}')
-            call_i += 1
         elif props['State'].value == 'dialing':
+            call_i += 1
             mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
             mm_call_interface.props.update({
-                'State': Variant('i', 2),  # ringing out MM_CALL_STATE_RINGING_OUT
-                'StateReason': Variant('i', 0), # outgoing started MM_CALL_STATE_REASON_UNKNOWN
+                'State': Variant('i', 1),  # ringing out MM_CALL_STATE_DIALING
+                'StateReason': Variant('i', 1), # outgoing MM_CALL_STATE_REASON_OUTGOING_STARTED
                 'Direction': Variant('i', 2), # outgoing MM_CALL_DIRECTION_OUTGOING
                 'Number': Variant('s', props['LineIdentification'].value),
             })
@@ -83,12 +84,9 @@ class MMModemVoiceInterface(ServiceInterface):
             self.props['Calls'].value.append(f'/org/freedesktop/ModemManager1/Call/{call_i}')
             self.emit_properties_changed({'Calls': self.props['Calls'].value})
             self.CallAdded(f'/org/freedesktop/ModemManager1/Call/{call_i}')
-            call_i += 1
 
     async def remove_call(self, path):
         global call_i
-
-        call_i -= 1
 
         try:
             self.props['Calls'].value.remove(f'/org/freedesktop/ModemManager1/Call/{call_i}')
@@ -156,18 +154,9 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
-        mm_call_interface.voicecall = f'/org/freedesktop/ModemManager1/Call/{call_i}'
-        mm_call_interface.props.update({
-            'State': Variant('i', 2), # ringing out MM_CALL_STATE_RINGING_OUT
-            'StateReason': Variant('i', 1), # outgoing started MM_CALL_STATE_REASON_OUTGOING_STARTED
-            'Direction': Variant('i', 2), # outgoing MM_CALL_DIRECTION_OUTGOING
-            'Number': Variant('s', properties['number'].value),
-        })
-
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_dial(properties['number'].value, 'disabled')
-
-        return f'/org/freedesktop/ModemManager1/Call/{call_i}'
+        new_call_i = call_i + 1
+        return f'/org/freedesktop/ModemManager1/Call/{new_call_i}'
 
     @method()
     async def HoldAndAccept(self):
@@ -200,7 +189,6 @@ class MMModemVoiceInterface(ServiceInterface):
 
     @signal()
     def CallDeleted(self, path) -> 'o':
-        # print(f"call deleted: {path}")
         return path
 
     @dbus_property(access=PropertyAccess.READ)
