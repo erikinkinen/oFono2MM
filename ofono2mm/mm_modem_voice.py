@@ -184,7 +184,7 @@ class MMModemVoiceInterface(ServiceInterface):
         pass
 
     @signal()
-    def CallAdded(self, path) -> 's':
+    def CallAdded(self, path) -> 'o':
         # print(f"call added: {path}")
         return path
 
