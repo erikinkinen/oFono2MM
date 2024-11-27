@@ -25,6 +25,7 @@ from ofono2mm.mm_types import ModemManagerState,\
                               ModemManagerCellType,\
                               ModemManagerMode,\
                               ModemManagerCapability,\
+                              ModemManagerPortType,\
                               OFONO_TECHNOLOGIES,\
                               OFONO_CELL_TYPES,\
                               OFONO_RETRIES_LOCK,\
@@ -78,7 +79,7 @@ class MMModemInterface(ServiceInterface):
             'Drivers': Variant('as', ['binder']),
             'Plugin': Variant('s', 'ofono2mm'),
             'PrimaryPort': Variant('s', self.modem_name),
-            'Ports': Variant('a(su)', [[self.modem_name, 0]]), # on runtime unknown MM_MODEM_PORT_TYPE_UNKNOWN
+            'Ports': Variant('a(su)', [[self.modem_name, ModemManagerPortType.UNKNOWN]]),
             'EquipmentIdentifier': Variant('s', ''),
             'UnlockRequired': Variant('u', ModemManagerLock.UNKNOWN),
             'UnlockRetries': Variant('a{uu}', {}),
@@ -272,7 +273,7 @@ class MMModemInterface(ServiceInterface):
                 })
 
                 if 'Interface' in ctx[1]['Settings'].value:
-                    self.props['Ports'].value.append([ctx[1]['Settings'].value['Interface'].value, 2]) # port type AT MM_MODEM_PORT_TYPE_AT
+                    self.props['Ports'].value.append([ctx[1]['Settings'].value['Interface'].value, ModemManagerPortType.AT])
                     self.emit_properties_changed({'Ports': self.props['Ports'].value})
 
                 ofono_ctx_interface = self.ofono_client["ofono_context"][ctx[0]]["org.ofono.ConnectionContext"]

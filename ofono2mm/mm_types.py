@@ -220,3 +220,14 @@ MM_MODES = {
     ],
     ModemManagerMode.NONE: []
 }
+
+class ModemManagerPortType:
+    UNKNOWN = 1
+    NET     = 2
+    AT      = 3
+    QCDM    = 4
+    GPS     = 5
+    QMI     = 6
+    MBIM    = 7
+    AUDIO   = 8
+    IGNORED = 9
