@@ -3,6 +3,7 @@ from dbus_next.service import (ServiceInterface,
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant, DBusError, BusType
 
+from ofono2mm.mm_types import ModemManagerPortType
 from ofono2mm.utils import async_retryable
 
 import asyncio
@@ -207,7 +208,7 @@ class MMBearerInterface(ServiceInterface):
                 self.props['Interface'] = value.value['Interface']
                 self.emit_properties_changed({'Interface': value.value['Interface'].value})
                 if [value.value['Interface'].value, 2] not in self.mm_modem.props['Ports'].value:
-                    self.mm_modem.props['Ports'].value.append([value.value['Interface'].value, 2]) # port type AT MM_MODEM_PORT_TYPE_AT
+                    self.mm_modem.props['Ports'].value.append([value.value['Interface'].value, ModemManagerPortType.AT])
             if 'Method' in value.value:
                 if value.value['Method'].value == 'static':
                     self.props['Ip4Config'].value['method'] = Variant('u', 2) # static MM_BEARER_IP_METHOD_STATIC
