@@ -2,6 +2,8 @@ from dbus_next.service import (ServiceInterface, method, dbus_property, signal)
 from dbus_next.constants import PropertyAccess
 from dbus_next import Variant
 
+from ofono2mm.mm_types import ModemManagerState, ModemManagerAccessTechnology
+
 class MMModemSimpleInterface(ServiceInterface):
     def __init__(self, mm_modem, ofono_interfaces, ofono_interface_props):
         super().__init__('org.freedesktop.ModemManager1.Modem.Simple')
@@ -9,10 +11,10 @@ class MMModemSimpleInterface(ServiceInterface):
         self.ofono_interfaces = ofono_interfaces
         self.ofono_interface_props = ofono_interface_props
         self.props = {
-             'state': Variant('u', 7), # on runtime enabled MM_MODEM_STATE_ENABLED
+             'state': Variant('u', ModemManagerState.ENABLED),
              'signal-quality': Variant('(ub)', [0, True]),
              'current-bands': Variant('au', []),
-             'access-technologies': Variant('u', 0), # on runtime unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
+             'access-technologies': Variant('u', ModemManagerAccessTechnology.UNKNOWN),
              'm3gpp-registration-state': Variant('u', 0), # on runtime idle MM_MODEM_3GPP_REGISTRATION_STATE_IDLE
              'm3gpp-operator-code': Variant('s', ''),
              'm3gpp-operator-name': Variant('s', ''),
@@ -44,11 +46,11 @@ class MMModemSimpleInterface(ServiceInterface):
 
             if 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == 'registered' or self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == 'roaming':
-                    self.props['state'] = Variant('u', 9) # registered MM_MODEM_STATE_REGISTERED
+                    self.props['state'] = Variant('u', ModemManagerState.REGISTERED)
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == 'searching':
-                    self.props['state'] = Variant('u', 8) # searching MM_MODEM_STATE_SEARCHING
+                    self.props['state'] = Variant('u', ModemManagerState.SEARCHING)
                 else:
-                    self.props['state'] = Variant('u', 7) # enabled MM_MODEM_STATE_ENABLED
+                    self.props['state'] = Variant('u', ModemManagerState.ENABLED)
 
             if 'Status' in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 if self.ofono_interface_props['org.ofono.NetworkRegistration']['Status'].value == "unregistered":
@@ -69,25 +71,25 @@ class MMModemSimpleInterface(ServiceInterface):
             self.props['m3gpp-operator-name'] = Variant('s', '')
             self.props['m3gpp-operator-code'] = Variant('s', '')
             self.props['signal-quality'] = Variant('(ub)', [0, True])
-            self.props['state'] = Variant('u', 7) # enabled MM_MODEM_STATE_ENABLED
+            self.props['state'] = Variant('u', ModemManagerState.ENABLED)
 
         if 'org.ofono.NetworkRegistration' in self.ofono_interface_props and self.props['state'].value == 7:
             if "Technology" in self.ofono_interface_props['org.ofono.NetworkRegistration']:
                 current_tech = 0
                 if self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "nr":
-                    current_tech |= 1 << 15 # network is 5g MM_MODEM_ACCESS_TECHNOLOGY_5GNR
+                    current_tech |= 1 << ModemManagerAccessTechnology._5GNR
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "lte":
-                    current_tech |= 1 << 14 # network is lte MM_MODEM_ACCESS_TECHNOLOGY_LTE
+                    current_tech |= 1 << ModemManagerAccessTechnology.LTE
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "umts" or self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hspa" or self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hsdpa" or self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "hsupa":
-                    current_tech |= 1 << 5 # network is umts MM_MODEM_ACCESS_TECHNOLOGY_UMTS
+                    current_tech |= 1 << ModemManagerAccessTechnology.UMTS
                 elif self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gsm" or self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "edge" or self.ofono_interface_props['org.ofono.NetworkRegistration']["Technology"].value == "gprs":
-                    current_tech |= 1 << 1 # network is gsm MM_MODEM_ACCESS_TECHNOLOGY_GSM
+                    current_tech |= 1 << ModemManagerAccessTechnology.GSM
 
                 self.props['access-technologies'] = Variant('u', current_tech)
             else:
-                self.props['access-technologies'] = Variant('u', 0) # network is unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
+                self.props['access-technologies'] = Variant('u', ModemManagerAccessTechnology.UNKNOWN)
         else:
-            self.props['access-technologies'] = Variant('u', 0) # network is unknown MM_MODEM_ACCESS_TECHNOLOGY_UNKNOWN
+            self.props['access-technologies'] = Variant('u', ModemManagerAccessTechnology.UNKNOWN)
 
     @method()
     async def Connect(self, properties: 'a{sv}') -> 'o':
