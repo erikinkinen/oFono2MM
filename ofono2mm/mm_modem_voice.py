@@ -4,6 +4,8 @@ from dbus_next import Variant
 
 from ofono2mm.mm_call import MMCallInterface
 
+from ofono2mm.logger import Logger
+
 import time
 
 call_i = 1
@@ -68,22 +70,6 @@ class MMModemVoiceInterface(ServiceInterface):
             self.props['Calls'].value.append(f'/org/freedesktop/ModemManager1/Call/{call_i}')
             self.emit_properties_changed({'Calls': self.props['Calls'].value})
             self.CallAdded(f'/org/freedesktop/ModemManager1/Call/{call_i}')
-        elif props['State'].value == 'dialing':
-            call_i += 1
-            mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
-            mm_call_interface.props.update({
-                'State': Variant('i', 1),  # ringing out MM_CALL_STATE_DIALING
-                'StateReason': Variant('i', 1), # outgoing MM_CALL_STATE_REASON_OUTGOING_STARTED
-                'Direction': Variant('i', 2), # outgoing MM_CALL_DIRECTION_OUTGOING
-                'Number': Variant('s', props['LineIdentification'].value),
-            })
-
-            mm_call_interface.voicecall = path
-            await mm_call_interface.init_call()
-            self.bus.export(f'/org/freedesktop/ModemManager1/Call/{call_i}', mm_call_interface)
-            self.props['Calls'].value.append(f'/org/freedesktop/ModemManager1/Call/{call_i}')
-            self.emit_properties_changed({'Calls': self.props['Calls'].value})
-            self.CallAdded(f'/org/freedesktop/ModemManager1/Call/{call_i}')
 
     async def remove_call(self, path):
         global call_i
@@ -101,7 +87,6 @@ class MMModemVoiceInterface(ServiceInterface):
         else:
             self.props['EmergencyOnly'] = Variant('b', False)
 
-        # print(f"call deleted: {path}")
         if 'org.ofono.ConnectionManager' in self.ofono_interfaces:
             contexts = await self.ofono_interfaces['org.ofono.ConnectionManager'].call_get_contexts()
             self.context_names = []
@@ -155,8 +140,27 @@ class MMModemVoiceInterface(ServiceInterface):
             self.props['EmergencyOnly'] = Variant('b', False)
 
         await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_dial(properties['number'].value, 'disabled')
-        new_call_i = call_i + 1
-        return f'/org/freedesktop/ModemManager1/Call/{new_call_i}'
+        call_i += 1
+        mm_call_interface = MMCallInterface(self.index, self.bus, self.ofono_client, self.modem_name, self.ofono_modem, self.ofono_props, self.ofono_interfaces, self.ofono_interface_props)
+        mm_call_interface.props.update({
+            'State': Variant('i', 0),  # unknown MM_CALL_STATE_UNKNOWN
+            'StateReason': Variant('i', 0), # outgoing MM_CALL_STATE_REASON_UNKNOWN
+            'Direction': Variant('i', 2), # outgoing MM_CALL_DIRECTION_OUTGOING
+            'Number': Variant('s', properties['number'].value),
+        })
+
+        # Get last created ofono call as we need to pass the ofono call path to mm_call_interface
+        active_calls = await self.ofono_interfaces['org.ofono.VoiceCallManager'].call_get_calls()
+        last_call = active_calls[-1]
+
+        mm_call_interface.voicecall = last_call[0]
+        await mm_call_interface.init_call()
+        self.bus.export(f'/org/freedesktop/ModemManager1/Call/{call_i}', mm_call_interface)
+        self.props['Calls'].value.append(f'/org/freedesktop/ModemManager1/Call/{call_i}')
+        self.emit_properties_changed({'Calls': self.props['Calls'].value})
+        self.CallAdded(f'/org/freedesktop/ModemManager1/Call/{call_i}')
+        Logger.debug ("Call Added: Ofono Path: %s, MM_Path: /org/freedesktop/ModemManager1/Call/%s", last_call[0], call_i)
+        return f'/org/freedesktop/ModemManager1/Call/{call_i}'
 
     @method()
     async def HoldAndAccept(self):
