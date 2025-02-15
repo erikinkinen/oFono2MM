@@ -36,7 +36,7 @@ class MMSimInterface(ServiceInterface):
 
         if 'org.ofono.SimManager' in self.ofono_interface_props:
             if 'Present' in self.ofono_interface_props['org.ofono.SimManager']:
-                if self.ofono_interface_props['org.ofono.SimManager']:
+                if self.ofono_interface_props['org.ofono.SimManager']['Present']:
                     self.props['Active'] = Variant('b', True)
                 else:
                     self.props['Active'] = Variant('b', False)
